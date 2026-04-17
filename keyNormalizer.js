@@ -122,13 +122,13 @@
     };
 
     if (extras) {
-      if (extras.ruleId) {
+      if (extras.ruleId !== undefined) {
         warning.ruleId = extras.ruleId;
       }
-      if (extras.phase) {
+      if (extras.phase !== undefined) {
         warning.phase = extras.phase;
       }
-      if (extras.missingInput) {
+      if (extras.missingInput !== undefined) {
         warning.missingInput = extras.missingInput;
       }
     }
@@ -232,13 +232,16 @@
     return errors;
   }
 
-  function validateTask(task) {
+  function prepareTask(task) {
     var normalizedTask = cloneNormalized(task);
     var errors = [];
     var rules;
     var sortedRules = [];
+    var compiledStringRules = [];
+    var enrichmentRules = [];
     var seenOrders = {};
     var maxStringRuleOrder = null;
+    var compiledByRule = new Map();
     var index;
     var rule;
     var ruleKind;
@@ -253,7 +256,9 @@
           createValidationError("INVALID_TASK", "Normalization task must be an object.")
         ],
         normalizedTask: null,
-        sortedRules: []
+        sortedRules: [],
+        compiledStringRules: [],
+        enrichmentRules: []
       };
     }
 
@@ -348,12 +353,7 @@
             } else {
               try {
                 compiled = new RegExp(rule.pattern, rule.flags);
-                if (!(compiled instanceof RegExp)) {
-                  errors.push(createValidationError(
-                    "INVALID_REGEX_RULE",
-                    "RegexReplace rule '" + getRuleLabel(rule, index) + "' could not be compiled."
-                  ));
-                }
+                compiledByRule.set(rule, compiled);
               } catch (error) {
                 errors.push(createValidationError(
                   "INVALID_REGEX_RULE",
@@ -409,6 +409,20 @@
             ));
           }
         }
+
+        if (!errors.length) {
+          for (index = 0; index < sortedRules.length; index += 1) {
+            rule = sortedRules[index];
+            if (rule.phase === PHASE_ENRICHMENT) {
+              enrichmentRules.push(rule);
+            } else if (rule.ruleKind === "RegexReplace") {
+              compiledStringRules.push({
+                expression: compiledByRule.get(rule),
+                replacement: rule.replacement
+              });
+            }
+          }
+        }
       }
     }
 
@@ -416,7 +430,18 @@
       valid: errors.length === 0,
       errors: errors,
       normalizedTask: normalizedTask,
-      sortedRules: errors.length === 0 ? sortedRules : []
+      sortedRules: errors.length === 0 ? sortedRules : [],
+      compiledStringRules: compiledStringRules,
+      enrichmentRules: enrichmentRules
+    };
+  }
+
+  function validateTask(task) {
+    var prep = prepareTask(task);
+    return {
+      valid: prep.valid,
+      errors: prep.errors.slice(0),
+      sortedRules: prep.sortedRules
     };
   }
 
@@ -442,15 +467,13 @@
     });
   }
 
-  function applyRegexRules(workingString, rules) {
+  function applyCompiledStringRules(workingString, compiledStringRules) {
     var index;
-    var rule;
-    var expression;
+    var entry;
 
-    for (index = 0; index < rules.length; index += 1) {
-      rule = rules[index];
-      expression = new RegExp(rule.pattern, rule.flags);
-      workingString = workingString.replace(expression, rule.replacement);
+    for (index = 0; index < compiledStringRules.length; index += 1) {
+      entry = compiledStringRules[index];
+      workingString = workingString.replace(entry.expression, entry.replacement);
     }
 
     return workingString;
@@ -461,6 +484,7 @@
     var index;
     var tokenIndex;
     var rule;
+    var ruleLabel;
     var dictionary;
     var replacementTokens;
     var replacementValue;
@@ -468,15 +492,16 @@
 
     for (index = 0; index < rules.length; index += 1) {
       rule = rules[index];
+      ruleLabel = getRuleLabel(rule, index);
 
       if (!inputs || !hasOwn(inputs, rule.inputKey)) {
         if (rule.missingInputBehavior === "skipWithWarning") {
           warnings.push(createWarning(
             "MISSING_OPTIONAL_INPUT",
-            "Optional input '" + rule.inputKey + "' was not provided; rule '" + getRuleLabel(rule, index) + "' was skipped.",
+            "Optional input '" + rule.inputKey + "' was not provided; rule '" + ruleLabel + "' was skipped.",
             "warning",
             {
-              ruleId: rule["@id"],
+              ruleId: ruleLabel,
               phase: rule.phase,
               missingInput: rule.inputKey
             }
@@ -486,9 +511,9 @@
 
         error = createValidationError(
           "MISSING_REQUIRED_INPUT",
-          "Required input '" + rule.inputKey + "' was not provided for rule '" + getRuleLabel(rule, index) + "'.",
+          "Required input '" + rule.inputKey + "' was not provided for rule '" + ruleLabel + "'.",
           {
-            ruleId: rule["@id"],
+            ruleId: ruleLabel,
             phase: rule.phase,
             missingInput: rule.inputKey
           }
@@ -519,39 +544,20 @@
     };
   }
 
-  function normalize(task) {
-    var validation = validateTask(task);
-    var normalizedTask = validation.normalizedTask;
-    var sourceIdentifier;
-    var pipelineId;
-    var stringRules;
-    var enrichmentRules;
-    var workingString;
+  function executeCompiledPipeline(source, compiledStringRules, enrichmentRules, inputs, pipelineId, fallbackTask) {
     var warnings = [];
+    var workingString;
     var tokens;
     var enrichmentResult;
 
-    if (!validation.valid) {
-      return buildFailedResult(normalizedTask, validation.errors);
-    }
-
-    sourceIdentifier = normalizedTask.rawIdentifier;
-    pipelineId = normalizedTask.pipeline && normalizedTask.pipeline["@id"];
-    stringRules = validation.sortedRules.filter(function (rule) {
-      return rule.phase !== PHASE_ENRICHMENT;
-    });
-    enrichmentRules = validation.sortedRules.filter(function (rule) {
-      return rule.phase === PHASE_ENRICHMENT;
-    });
-
     try {
-      workingString = applyRegexRules(sourceIdentifier, stringRules);
+      workingString = applyCompiledStringRules(source, compiledStringRules);
       tokens = tokenizeCanonical(workingString);
-      enrichmentResult = applyEnrichmentRules(tokens, enrichmentRules, normalizedTask.inputs, warnings);
+      enrichmentResult = applyEnrichmentRules(tokens, enrichmentRules, inputs, warnings);
 
       if (!enrichmentResult.ok) {
         return buildFailedResult(
-          normalizedTask,
+          fallbackTask,
           [enrichmentResult.error],
           {
             warningCode: "MISSING_REQUIRED_INPUT",
@@ -564,14 +570,14 @@
       tokens = enrichmentResult.tokens;
 
       return buildResult(
-        sourceIdentifier,
+        source,
         tokens.join(" "),
         tokens,
         buildMetadata("succeeded", pipelineId, warnings)
       );
     } catch (error) {
       return buildFailedResult(
-        normalizedTask,
+        fallbackTask,
         [
           createValidationError(
             "EXECUTION_ERROR",
@@ -585,6 +591,28 @@
     }
   }
 
+  function normalize(task) {
+    var prep = prepareTask(task);
+    var normalizedTask;
+    var pipelineId;
+
+    if (!prep.valid) {
+      return buildFailedResult(prep.normalizedTask, prep.errors);
+    }
+
+    normalizedTask = prep.normalizedTask;
+    pipelineId = normalizedTask.pipeline && normalizedTask.pipeline["@id"];
+
+    return executeCompiledPipeline(
+      normalizedTask.rawIdentifier,
+      prep.compiledStringRules,
+      prep.enrichmentRules,
+      normalizedTask.inputs,
+      pipelineId,
+      normalizedTask
+    );
+  }
+
   function extractTokens(task) {
     return normalize(task).tokens.slice(0);
   }
@@ -593,69 +621,38 @@
     return cloneContext();
   }
 
-  function applyCompiledStringRules(workingString, compiledStringRules) {
-    var index;
-    var entry;
-
-    for (index = 0; index < compiledStringRules.length; index += 1) {
-      entry = compiledStringRules[index];
-      workingString = workingString.replace(entry.expression, entry.replacement);
-    }
-
-    return workingString;
-  }
-
   function compile(pipelineDefinition, inputs) {
     var templateTask = {
       "@type": "NormalizationTask",
       "rawIdentifier": "",
       "pipeline": pipelineDefinition
     };
-    var validation;
-    var compiledStringRules;
-    var enrichmentRules;
+    var prep;
     var normalizedInputs;
     var pipelineId;
-    var index;
-    var rule;
 
     if (inputs !== undefined) {
       templateTask.inputs = inputs;
     }
 
-    validation = validateTask(templateTask);
+    prep = prepareTask(templateTask);
 
-    if (!validation.valid) {
+    if (!prep.valid) {
       return {
         valid: false,
-        errors: validation.errors.slice(0),
+        errors: prep.errors.slice(0),
         run: function (rawIdentifier) {
           var fallbackTask = {
             "@type": "NormalizationTask",
             "rawIdentifier": isString(rawIdentifier) ? rawIdentifier : "",
             "pipeline": pipelineDefinition
           };
-          return buildFailedResult(fallbackTask, validation.errors);
+          return buildFailedResult(fallbackTask, prep.errors);
         }
       };
     }
 
-    compiledStringRules = [];
-    enrichmentRules = [];
-
-    for (index = 0; index < validation.sortedRules.length; index += 1) {
-      rule = validation.sortedRules[index];
-      if (rule.phase === PHASE_ENRICHMENT) {
-        enrichmentRules.push(rule);
-      } else {
-        compiledStringRules.push({
-          expression: new RegExp(rule.pattern, rule.flags),
-          replacement: rule.replacement
-        });
-      }
-    }
-
-    normalizedInputs = inputs !== undefined ? cloneNormalized(inputs) : undefined;
+    normalizedInputs = prep.normalizedTask.inputs;
     pipelineId = pipelineDefinition && pipelineDefinition["@id"];
 
     return {
@@ -663,10 +660,6 @@
       errors: [],
       run: function (rawIdentifier) {
         var source;
-        var workingString;
-        var warnings = [];
-        var tokens;
-        var enrichmentResult;
         var fallbackTask;
 
         if (!isString(rawIdentifier)) {
@@ -690,45 +683,14 @@
           "pipeline": pipelineDefinition
         };
 
-        try {
-          workingString = applyCompiledStringRules(source, compiledStringRules);
-          tokens = tokenizeCanonical(workingString);
-          enrichmentResult = applyEnrichmentRules(tokens, enrichmentRules, normalizedInputs, warnings);
-
-          if (!enrichmentResult.ok) {
-            return buildFailedResult(
-              fallbackTask,
-              [enrichmentResult.error],
-              {
-                warningCode: "MISSING_REQUIRED_INPUT",
-                normalizedString: tokens.join(" "),
-                warningExtras: enrichmentResult.error.details
-              }
-            );
-          }
-
-          tokens = enrichmentResult.tokens;
-
-          return buildResult(
-            source,
-            tokens.join(" "),
-            tokens,
-            buildMetadata("succeeded", pipelineId, warnings)
-          );
-        } catch (error) {
-          return buildFailedResult(
-            fallbackTask,
-            [
-              createValidationError(
-                "EXECUTION_ERROR",
-                "Normalization failed during execution: " + error.message + "."
-              )
-            ],
-            {
-              warningCode: "EXECUTION_ERROR"
-            }
-          );
-        }
+        return executeCompiledPipeline(
+          source,
+          prep.compiledStringRules,
+          prep.enrichmentRules,
+          normalizedInputs,
+          pipelineId,
+          fallbackTask
+        );
       }
     };
   }

@@ -176,8 +176,9 @@ node -e "const k=require('./keyNormalizer.js'); console.log(k.version)"
 ### Tests
 
 ```bash
-node tests/run-tests.js      # 12 fixture-based conformance tests + determinism check
-node tests/test-compile.js   # compile() API tests
+node tests/run-tests.js        # 12 fixture-based conformance tests + determinism check
+node tests/test-compile.js     # compile() API tests
+node tests/test-conformance.js # spec-4.8 warning-shape assertions and public validateTask shape
 ```
 
 ## Current Scope
