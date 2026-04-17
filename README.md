@@ -179,10 +179,11 @@ node -e "const k=require('./keyNormalizer.js'); console.log(k.version)"
 ### Tests
 
 ```bash
-node tests/run-tests.js           # 12 fixture-based conformance tests + determinism check
-node tests/test-compile.js        # compile() API tests
-node tests/test-conformance.js    # spec-4.8 warning-shape assertions and public validateTask shape
-node tests/test-build-pipeline.js # offline round-trip of scripts/compile-runtime-dictionary.js
+node tests/run-tests.js                # 12 fixture-based conformance tests + determinism check
+node tests/test-compile.js             # compile() API tests
+node tests/test-conformance.js         # spec-4.8 warning-shape assertions and public validateTask shape
+node tests/test-build-pipeline.js      # offline round-trip of scripts/compile-runtime-dictionary.js
+node tests/test-acronym-collection.js  # schema-harness acronym heuristic + SPARQL query builder
 ```
 
 ## Current Scope
@@ -220,3 +221,13 @@ node ./scripts/compile-runtime-dictionary.js \
 Worked examples of both artifacts are checked into `artifacts/examples/`. `tests/test-build-pipeline.js` runs the compile step against those samples to verify the pipeline stays in sync with the spec.
 
 Only the compiled `entriesMap` should ever be injected into `NormalizationTask.inputs`. The intermediate extraction artifact is provenance metadata for build tooling, not a runtime payload.
+
+## Interactive Wikidata Suggestions (Schema Title Normalizer Only)
+
+`index.html` has an opt-in **Suggest expansions from Wikidata** toggle that, when checked, detects acronym-shaped tokens in your schema keys (all-caps, length ≥ 2) and queries `query.wikidata.org` for `P1813` short-name matches in a single batched SPARQL call. Results populate a disambiguation panel below the input/output:
+
+- Each detected acronym gets a dropdown pre-selected to **Leave as acronym** — nothing is auto-applied, so you see every Wikidata choice before it affects titles.
+- Rows with multiple candidates are **highlighted** so you notice ambiguity (`MAC` → Media Access Control vs. Macintosh, etc.).
+- Clicking **Apply Selections & Re-Normalize** merges your picks into the abbreviation-dictionary textarea and re-runs title generation.
+
+This feature lives entirely in the harness. It never calls `keyNormalizer.js` across the network and does not change the library's "no network calls" guarantee — it only feeds the same `DictionaryExpand` input your dictionary textarea already drives. Disable the toggle to keep the page fully offline.

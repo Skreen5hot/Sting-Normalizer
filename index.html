@@ -53,7 +53,6 @@
       border: 1px solid var(--line);
       border-radius: var(--radius-lg);
       background: var(--panel);
-      backdrop-filter: blur(12px);
       box-shadow: var(--shadow);
     }
 
@@ -285,6 +284,69 @@
       margin-bottom: 14px;
     }
 
+    .suggestions-panel {
+      margin-top: 18px;
+    }
+
+    .suggestions-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .suggestion-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 14px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 252, 248, 0.95);
+      border: 1px solid rgba(55, 38, 21, 0.14);
+    }
+
+    .suggestion-row.ambiguous {
+      background: var(--warn-soft);
+      border-color: rgba(133, 96, 0, 0.3);
+    }
+
+    .suggestion-row.resolved {
+      background: var(--accent-2-soft);
+      border-color: rgba(47, 104, 86, 0.3);
+    }
+
+    .suggestion-acronym {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 1.02rem;
+      letter-spacing: 0.04em;
+    }
+
+    .suggestion-acronym .ambiguity-badge {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 2px 8px;
+      font-family: var(--serif);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #6e4d00;
+      background: rgba(133, 96, 0, 0.2);
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .suggestion-select {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(55, 38, 21, 0.14);
+      background: rgba(255, 252, 248, 0.98);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 0.88rem;
+    }
+
     code {
       font-family: var(--mono);
       font-size: 0.92em;
@@ -397,6 +459,10 @@
               <input id="normalizeRootCheckbox" type="checkbox">
               Normalize root title from <code>$id</code> when possible
             </label>
+            <label class="toggle">
+              <input id="suggestWikidataCheckbox" type="checkbox">
+              Suggest expansions from Wikidata (network)
+            </label>
           </div>
         </div>
 
@@ -449,6 +515,27 @@
         </div>
       </section>
     </section>
+
+    <section class="panel suggestions-panel" id="suggestionsPanel" hidden>
+      <div class="panel-header">
+        <div class="panel-title">
+          <h2>Wikidata Suggestions</h2>
+          <p class="panel-copy">
+            The library never calls Wikidata. When this toggle is on, the harness detects
+            acronym-shaped tokens in your schema keys, queries <code>query.wikidata.org</code>
+            for matching <code>P1813</code> short-name entries, and lets you pick which expansion
+            (if any) to feed back into the abbreviation dictionary.
+          </p>
+        </div>
+        <div class="toolbar">
+          <button class="button-primary" id="applySuggestionsButton" type="button" disabled>Apply Selections &amp; Re-Normalize</button>
+        </div>
+      </div>
+
+      <div id="suggestionsMessage" class="message warning">No acronyms detected yet. Run Normalize Titles to query Wikidata.</div>
+
+      <div id="suggestionsList" class="suggestions-list"></div>
+    </section>
   </main>
 
   <script src="./keyNormalizer.js"></script>
@@ -471,6 +558,7 @@
         outputSchema: document.getElementById("outputSchema"),
         overwriteTitlesCheckbox: document.getElementById("overwriteTitlesCheckbox"),
         normalizeRootCheckbox: document.getElementById("normalizeRootCheckbox"),
+        suggestWikidataCheckbox: document.getElementById("suggestWikidataCheckbox"),
         loadSampleButton: document.getElementById("loadSampleButton"),
         loadSampleDictionaryButton: document.getElementById("loadSampleDictionaryButton"),
         normalizeButton: document.getElementById("normalizeButton"),
@@ -478,8 +566,16 @@
         formatDictionaryButton: document.getElementById("formatDictionaryButton"),
         copyInputButton: document.getElementById("copyInputButton"),
         copyDictionaryButton: document.getElementById("copyDictionaryButton"),
-        copyOutputButton: document.getElementById("copyOutputButton")
+        copyOutputButton: document.getElementById("copyOutputButton"),
+        suggestionsPanel: document.getElementById("suggestionsPanel"),
+        suggestionsMessage: document.getElementById("suggestionsMessage"),
+        suggestionsList: document.getElementById("suggestionsList"),
+        applySuggestionsButton: document.getElementById("applySuggestionsButton")
       };
+
+      var suggestionCache = new Map();
+      var currentSuggestions = null;
+      var WIKIDATA_ENDPOINT = "https://query.wikidata.org/sparql";
 
       var sampleSchema = {
         "$id": "customer_profile.schema.json",
@@ -664,13 +760,38 @@
         return window.KeyNormalizer.compile(pipeline, inputs);
       }
 
-      function capitalizeToken(token) {
-        return token ? token.charAt(0).toUpperCase() + token.slice(1) : token;
+      function capitalizeToken(token, acronymSet) {
+        if (!token) {
+          return token;
+        }
+        if (acronymSet && acronymSet.has(token)) {
+          return token.toUpperCase();
+        }
+        return token.charAt(0).toUpperCase() + token.slice(1);
+      }
+
+      function detectAcronymSet(rawName) {
+        var acronyms = new Set();
+        if (typeof rawName !== "string" || !rawName) {
+          return acronyms;
+        }
+        var working = rawName.normalize("NFC")
+          .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+          .replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+        var pieces = working.split(/[\p{Z}\p{P}]+/u);
+        for (var i = 0; i < pieces.length; i += 1) {
+          var piece = pieces[i];
+          if (piece.length >= 2 && /[A-Z]/.test(piece) && piece === piece.toUpperCase()) {
+            acronyms.add(piece.toLowerCase());
+          }
+        }
+        return acronyms;
       }
 
       function normalizeNameToTitle(name, runner) {
         var result;
         var tokens;
+        var acronymSet;
 
         if (!name || typeof name !== "string") {
           return "";
@@ -683,7 +804,10 @@
           return name;
         }
 
-        return tokens.map(capitalizeToken).join(" ");
+        acronymSet = detectAcronymSet(name);
+        return tokens.map(function (token) {
+          return capitalizeToken(token, acronymSet);
+        }).join(" ");
       }
 
       function extractRootName(schema) {
@@ -827,6 +951,313 @@
         };
       }
 
+      function collectSchemaKeys(schemaNode, keyName, accumulator) {
+        if (keyName) {
+          accumulator.push(keyName);
+        }
+        if (!isPlainObject(schemaNode)) {
+          return;
+        }
+
+        ["properties", "$defs", "definitions", "dependentSchemas"].forEach(function (container) {
+          if (!isPlainObject(schemaNode[container])) {
+            return;
+          }
+          Object.keys(schemaNode[container]).forEach(function (childKey) {
+            collectSchemaKeys(schemaNode[container][childKey], childKey, accumulator);
+          });
+        });
+
+        if (isPlainObject(schemaNode.patternProperties)) {
+          Object.keys(schemaNode.patternProperties).forEach(function (childKey) {
+            collectSchemaKeys(schemaNode.patternProperties[childKey], null, accumulator);
+          });
+        }
+
+        ["items", "additionalProperties", "unevaluatedProperties", "propertyNames",
+         "contains", "if", "then", "else", "not", "additionalItems", "unevaluatedItems"]
+        .forEach(function (childKey) {
+          if (isPlainObject(schemaNode[childKey])) {
+            collectSchemaKeys(schemaNode[childKey], null, accumulator);
+          }
+        });
+
+        ["allOf", "anyOf", "oneOf", "prefixItems"].forEach(function (childKey) {
+          if (Array.isArray(schemaNode[childKey])) {
+            schemaNode[childKey].forEach(function (childSchema) {
+              collectSchemaKeys(childSchema, null, accumulator);
+            });
+          }
+        });
+
+        if (Array.isArray(schemaNode.items)) {
+          schemaNode.items.forEach(function (childSchema) {
+            collectSchemaKeys(childSchema, null, accumulator);
+          });
+        }
+      }
+
+      function collectAcronymCandidates(schema, options) {
+        var keys = [];
+        var rootName = options.normalizeRootTitle ? extractRootName(schema) : "";
+        collectSchemaKeys(schema, rootName, keys);
+        var union = new Set();
+        keys.forEach(function (name) {
+          detectAcronymSet(name).forEach(function (a) {
+            union.add(a);
+          });
+        });
+        return union;
+      }
+
+      function escapeSparqlLiteral(value) {
+        return value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
+      }
+
+      function buildSparqlShortNameQuery(needles) {
+        var values = needles.map(function (n) {
+          return "\"" + escapeSparqlLiteral(n) + "\"";
+        }).join(" ");
+        return [
+          "SELECT ?concept ?conceptLabel ?conceptDescription ?shortName WHERE {",
+          "  VALUES ?needle { " + values + " }",
+          "  ?concept wdt:P1813 ?shortName .",
+          "  FILTER(STR(?shortName) = ?needle)",
+          "  ?concept rdfs:label ?conceptLabel .",
+          "  FILTER(LANG(?conceptLabel) = \"en\")",
+          "  OPTIONAL {",
+          "    ?concept schema:description ?conceptDescription .",
+          "    FILTER(LANG(?conceptDescription) = \"en\")",
+          "  }",
+          "}",
+          "LIMIT 500"
+        ].join("\n");
+      }
+
+      function queryWikidataShortNames(acronymsLower) {
+        var uncached = acronymsLower.filter(function (a) {
+          return !suggestionCache.has(a);
+        });
+
+        var fetchPromise;
+        if (uncached.length === 0) {
+          fetchPromise = Promise.resolve();
+        } else {
+          var needles = uncached.map(function (a) { return a.toUpperCase(); });
+          var query = buildSparqlShortNameQuery(needles);
+          var url = WIKIDATA_ENDPOINT + "?format=json&query=" + encodeURIComponent(query);
+
+          fetchPromise = fetch(url, {
+            headers: { "Accept": "application/sparql-results+json" }
+          }).then(function (response) {
+            if (!response.ok) {
+              throw new Error("HTTP " + response.status + " from Wikidata");
+            }
+            return response.json();
+          }).then(function (data) {
+            uncached.forEach(function (a) {
+              if (!suggestionCache.has(a)) {
+                suggestionCache.set(a, []);
+              }
+            });
+            var bindings = (data && data.results && data.results.bindings) || [];
+            bindings.forEach(function (b) {
+              var short = b.shortName && b.shortName.value;
+              if (!short) {
+                return;
+              }
+              var key = short.toLowerCase();
+              var conceptUri = (b.concept && b.concept.value) || "";
+              var entry = {
+                qid: conceptUri.split("/").pop(),
+                conceptUri: conceptUri,
+                label: (b.conceptLabel && b.conceptLabel.value) || "",
+                description: (b.conceptDescription && b.conceptDescription.value) || ""
+              };
+              var arr = suggestionCache.get(key);
+              if (!arr) {
+                arr = [];
+                suggestionCache.set(key, arr);
+              }
+              var alreadyPresent = arr.some(function (existing) {
+                return existing.qid === entry.qid;
+              });
+              if (!alreadyPresent) {
+                arr.push(entry);
+              }
+            });
+          });
+        }
+
+        return fetchPromise.then(function () {
+          var resultMap = new Map();
+          acronymsLower.forEach(function (a) {
+            resultMap.set(a, suggestionCache.get(a) || []);
+          });
+          return resultMap;
+        });
+      }
+
+      function renderSuggestions(acronymsLower, resultsMap) {
+        elements.suggestionsList.innerHTML = "";
+        currentSuggestions = { acronyms: acronymsLower.slice(0), results: resultsMap };
+
+        if (!acronymsLower.length) {
+          elements.suggestionsMessage.className = "message success";
+          elements.suggestionsMessage.textContent = "No acronym-shaped tokens detected in schema.";
+          elements.applySuggestionsButton.disabled = true;
+          return;
+        }
+
+        var anyAmbiguous = false;
+        var anyResults = false;
+
+        acronymsLower.forEach(function (acronym) {
+          var candidates = resultsMap.get(acronym) || [];
+          if (candidates.length > 0) {
+            anyResults = true;
+          }
+          if (candidates.length > 1) {
+            anyAmbiguous = true;
+          }
+
+          var row = document.createElement("div");
+          row.className = "suggestion-row";
+          if (candidates.length > 1) {
+            row.classList.add("ambiguous");
+          }
+          row.dataset.acronym = acronym;
+
+          var acronymSpan = document.createElement("div");
+          acronymSpan.className = "suggestion-acronym";
+          acronymSpan.textContent = acronym.toUpperCase();
+          if (candidates.length > 1) {
+            var badge = document.createElement("span");
+            badge.className = "ambiguity-badge";
+            badge.textContent = candidates.length + " candidates";
+            acronymSpan.appendChild(badge);
+          }
+          row.appendChild(acronymSpan);
+
+          var select = document.createElement("select");
+          select.className = "suggestion-select";
+          select.dataset.acronym = acronym;
+
+          var noopOption = document.createElement("option");
+          noopOption.value = "";
+          noopOption.textContent = candidates.length === 0
+            ? "Leave as acronym (no Wikidata match)"
+            : "Leave as acronym";
+          select.appendChild(noopOption);
+
+          candidates.forEach(function (candidate) {
+            var opt = document.createElement("option");
+            opt.value = candidate.label;
+            var suffix = candidate.description ? " — " + candidate.description : "";
+            opt.textContent = candidate.label + " (" + candidate.qid + ")" + suffix;
+            select.appendChild(opt);
+          });
+
+          row.appendChild(select);
+          elements.suggestionsList.appendChild(row);
+        });
+
+        if (!anyResults) {
+          elements.suggestionsMessage.className = "message warning";
+          elements.suggestionsMessage.textContent = "Detected " + acronymsLower.length +
+            " acronym-shaped token(s), but Wikidata returned no P1813 matches. You can still add dictionary entries manually.";
+          elements.applySuggestionsButton.disabled = true;
+        } else if (anyAmbiguous) {
+          elements.suggestionsMessage.className = "message warning";
+          elements.suggestionsMessage.textContent = "Review highlighted rows — multiple Wikidata candidates found. Pick one per acronym or leave as-is.";
+          elements.applySuggestionsButton.disabled = false;
+        } else {
+          elements.suggestionsMessage.className = "message success";
+          elements.suggestionsMessage.textContent = "Pick an expansion for each acronym, or leave as-is.";
+          elements.applySuggestionsButton.disabled = false;
+        }
+      }
+
+      function runWikidataSuggestions(parsedSchema, abbreviationDictionary, options) {
+        var unionSet = collectAcronymCandidates(parsedSchema, options);
+        var dictionaryLowerKeys = {};
+        Object.keys(abbreviationDictionary || {}).forEach(function (k) {
+          dictionaryLowerKeys[k.toLowerCase()] = true;
+        });
+
+        var acronyms = [];
+        unionSet.forEach(function (a) {
+          if (!dictionaryLowerKeys[a]) {
+            acronyms.push(a);
+          }
+        });
+        acronyms.sort();
+
+        elements.suggestionsPanel.hidden = false;
+        elements.suggestionsList.innerHTML = "";
+
+        if (acronyms.length === 0) {
+          elements.suggestionsMessage.className = "message success";
+          elements.suggestionsMessage.textContent = "No new acronym-shaped tokens detected — everything is already covered by the dictionary.";
+          elements.applySuggestionsButton.disabled = true;
+          currentSuggestions = null;
+          return;
+        }
+
+        elements.suggestionsMessage.className = "message warning";
+        elements.suggestionsMessage.textContent = "Querying Wikidata for " + acronyms.length + " acronym(s)...";
+        elements.applySuggestionsButton.disabled = true;
+
+        queryWikidataShortNames(acronyms).then(function (resultsMap) {
+          renderSuggestions(acronyms, resultsMap);
+        }).catch(function (error) {
+          elements.suggestionsMessage.className = "message error";
+          elements.suggestionsMessage.textContent = "Wikidata query failed: " + error.message +
+            ". The harness falls back to preserved-casing for these acronyms.";
+          elements.applySuggestionsButton.disabled = true;
+          currentSuggestions = null;
+        });
+      }
+
+      function applySuggestions() {
+        var selects = elements.suggestionsList.querySelectorAll("select.suggestion-select");
+        var picks = {};
+        Array.prototype.forEach.call(selects, function (sel) {
+          if (sel.value) {
+            picks[sel.dataset.acronym] = sel.value;
+          }
+        });
+
+        if (Object.keys(picks).length === 0) {
+          setMessage("warning", "No expansions selected — nothing to apply.");
+          return;
+        }
+
+        var existing;
+        try {
+          existing = parseDictionaryInput();
+        } catch (error) {
+          existing = {};
+        }
+        Object.keys(picks).forEach(function (acronym) {
+          existing[acronym] = picks[acronym].toLowerCase();
+        });
+        elements.dictionaryInput.value = prettyStringify(existing);
+
+        // Mark applied rows visually and disable until next run.
+        Array.prototype.forEach.call(selects, function (sel) {
+          if (sel.value) {
+            var row = sel.closest(".suggestion-row");
+            if (row) {
+              row.classList.remove("ambiguous");
+              row.classList.add("resolved");
+            }
+          }
+        });
+
+        normalizeInput();
+      }
+
       function tryCopy(text, button) {
         function fallbackCopy() {
           var temp = document.createElement("textarea");
@@ -905,6 +1336,12 @@
           elements.statusSummary.textContent = "Completed";
           elements.errorSummary.textContent = "None";
           setMessage("success", "Schema titles normalized successfully.");
+
+          if (elements.suggestWikidataCheckbox.checked) {
+            runWikidataSuggestions(parsedSchema, abbreviationDictionary, options);
+          } else {
+            elements.suggestionsPanel.hidden = true;
+          }
         } catch (error) {
           resetRunState();
           elements.outputSchema.textContent = "Normalization failed.";
@@ -968,6 +1405,13 @@
         elements.formatInputButton.addEventListener("click", formatInput);
         elements.formatDictionaryButton.addEventListener("click", formatDictionary);
         elements.overwriteTitlesCheckbox.addEventListener("change", updateModeSummary);
+        elements.suggestWikidataCheckbox.addEventListener("change", function () {
+          if (!elements.suggestWikidataCheckbox.checked) {
+            elements.suggestionsPanel.hidden = true;
+            currentSuggestions = null;
+          }
+        });
+        elements.applySuggestionsButton.addEventListener("click", applySuggestions);
         elements.copyInputButton.addEventListener("click", function () {
           tryCopy(elements.inputSchema.value, elements.copyInputButton);
         });
