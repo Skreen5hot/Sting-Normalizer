@@ -1,0 +1,1304 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Key Normalizer Lab</title>
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --bg-panel: rgba(255, 251, 245, 0.82);
+      --bg-panel-strong: rgba(255, 248, 239, 0.96);
+      --ink: #1d1c1a;
+      --muted: #655d56;
+      --line: rgba(50, 36, 24, 0.15);
+      --accent: #a23f1f;
+      --accent-soft: rgba(162, 63, 31, 0.12);
+      --accent-2: #2f6a57;
+      --accent-2-soft: rgba(47, 106, 87, 0.12);
+      --warn: #8a5b00;
+      --warn-soft: rgba(138, 91, 0, 0.12);
+      --error: #8d1f1f;
+      --error-soft: rgba(141, 31, 31, 0.12);
+      --shadow: 0 18px 50px rgba(46, 28, 14, 0.12);
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+      --mono: "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
+      --serif: "Georgia", "Times New Roman", serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--serif);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(162, 63, 31, 0.20), transparent 30%),
+        radial-gradient(circle at top right, rgba(47, 106, 87, 0.18), transparent 28%),
+        linear-gradient(180deg, #f7f2ea 0%, #f3ede4 52%, #ece5dc 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      filter: blur(10px);
+      opacity: 0.45;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      top: -100px;
+      left: -100px;
+      background: rgba(162, 63, 31, 0.15);
+    }
+
+    body::after {
+      right: -110px;
+      bottom: -120px;
+      background: rgba(47, 106, 87, 0.12);
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(1380px, calc(100% - 32px));
+      margin: 24px auto 40px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .hero-card,
+    .panel {
+      backdrop-filter: blur(14px);
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 28px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      right: -40px;
+      top: -30px;
+      border-radius: 40px;
+      transform: rotate(12deg);
+      background: linear-gradient(180deg, rgba(162, 63, 31, 0.18), rgba(162, 63, 31, 0.02));
+    }
+
+    .eyebrow {
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      font-weight: 700;
+      line-height: 1.05;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 3vw, 3.3rem);
+      max-width: 14ch;
+    }
+
+    .hero-copy {
+      margin: 16px 0 18px;
+      max-width: 58ch;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.6;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      background: rgba(255, 255, 255, 0.58);
+      border: 1px solid rgba(50, 36, 24, 0.09);
+    }
+
+    .summary-card {
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .summary-item {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: var(--bg-panel-strong);
+      border: 1px solid var(--line);
+    }
+
+    .summary-label {
+      margin-bottom: 6px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    .summary-value {
+      font-size: 1.1rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.02fr 0.98fr;
+      gap: 18px;
+    }
+
+    .panel {
+      padding: 18px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .panel-title {
+      display: grid;
+      gap: 5px;
+    }
+
+    .panel-title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .control-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    label {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    select,
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    select,
+    textarea,
+    .output {
+      width: 100%;
+      border: 1px solid rgba(50, 36, 24, 0.14);
+      border-radius: var(--radius-md);
+      background: rgba(255, 252, 247, 0.92);
+      color: var(--ink);
+    }
+
+    select,
+    button {
+      min-height: 44px;
+    }
+
+    select {
+      padding: 0 14px;
+    }
+
+    textarea,
+    .output {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      padding: 14px 16px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    textarea {
+      min-height: 560px;
+      resize: vertical;
+    }
+
+    .output {
+      min-height: 110px;
+      overflow: auto;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0 18px;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(45, 22, 8, 0.10);
+    }
+
+    .button-primary {
+      background: linear-gradient(135deg, #b24a25, #8f3118);
+      color: #fffaf4;
+    }
+
+    .button-secondary {
+      background: rgba(255, 255, 255, 0.78);
+      color: var(--ink);
+      border: 1px solid rgba(50, 36, 24, 0.12);
+    }
+
+    .button-accent {
+      background: linear-gradient(135deg, #3e7f68, #2c6653);
+      color: #f7fffb;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: var(--bg-panel-strong);
+    }
+
+    .stat .summary-label {
+      margin-bottom: 8px;
+    }
+
+    .token-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      min-height: 56px;
+      align-content: flex-start;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: rgba(255, 252, 247, 0.94);
+    }
+
+    .token-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #5d210e;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      border: 1px solid rgba(162, 63, 31, 0.18);
+    }
+
+    .token-chip.empty {
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--muted);
+      border-style: dashed;
+    }
+
+    .message {
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .message.success {
+      background: var(--accent-2-soft);
+      color: #20483c;
+      border-color: rgba(47, 106, 87, 0.18);
+    }
+
+    .message.warning {
+      background: var(--warn-soft);
+      color: #6d4902;
+      border-color: rgba(138, 91, 0, 0.20);
+    }
+
+    .message.error {
+      background: var(--error-soft);
+      color: #671616;
+      border-color: rgba(141, 31, 31, 0.18);
+    }
+
+    .result-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .section-title {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+
+    .split-output {
+      display: grid;
+      gap: 14px;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.55);
+      color: var(--muted);
+      font-size: 0.92rem;
+      border: 1px solid rgba(50, 36, 24, 0.08);
+    }
+
+    @media (max-width: 1080px) {
+      .hero,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      textarea {
+        min-height: 420px;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .page {
+        width: min(100% - 20px, 1380px);
+        margin-top: 10px;
+      }
+
+      .hero-card,
+      .panel,
+      .summary-card {
+        padding: 16px;
+      }
+
+      .summary-grid,
+      .stat-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <article class="hero-card">
+        <div class="eyebrow">Offline Playground</div>
+        <h1>Key Normalizer Lab</h1>
+        <p class="hero-copy">
+          Test deterministic normalization pipelines directly in the browser. This page loads the local
+          <code>keyNormalizer.js</code> file, runs fully offline, and compares actual results against curated
+          expected outputs.
+        </p>
+        <div class="pill-row">
+          <div class="pill">No dependencies</div>
+          <div class="pill">No network calls</div>
+          <div class="pill">Spec-shaped JSON-LD output</div>
+        </div>
+      </article>
+
+      <aside class="hero-card summary-card">
+        <div>
+          <div class="eyebrow">Runtime Snapshot</div>
+          <h2>Single-file engine, single-page harness</h2>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="summary-label">Library</div>
+            <div class="summary-value" id="libraryStatus">Loading...</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Selected Example</div>
+            <div class="summary-value" id="selectedExampleLabel">Basic pipeline</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Expected Match</div>
+            <div class="summary-value" id="matchSummary">Pending</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Warnings</div>
+            <div class="summary-value" id="warningSummary">0</div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h2>Task Editor</h2>
+            <p>Choose an example or edit the JSON payload directly.</p>
+          </div>
+        </div>
+
+        <div class="control-stack">
+          <div>
+            <label for="exampleSelect">Example task</label>
+            <select id="exampleSelect"></select>
+          </div>
+
+          <div class="toolbar">
+            <button class="button-accent" id="loadExampleButton" type="button">Load Example</button>
+            <button class="button-primary" id="runButton" type="button">Run Normalize</button>
+            <button class="button-secondary" id="formatButton" type="button">Format JSON</button>
+            <button class="button-secondary" id="copyTaskButton" type="button">Copy Task</button>
+          </div>
+
+          <textarea id="taskInput" spellcheck="false" aria-label="Normalization task JSON"></textarea>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h2>Result Console</h2>
+            <p>Validation, execution summary, tokens, warnings, and full output.</p>
+          </div>
+          <div class="toolbar">
+            <button class="button-secondary" id="copyResultButton" type="button">Copy Result</button>
+          </div>
+        </div>
+
+        <div class="result-stack">
+          <div class="stat-grid">
+            <div class="stat">
+              <div class="summary-label">Status</div>
+              <div id="statusValue">Pending</div>
+            </div>
+            <div class="stat">
+              <div class="summary-label">Normalized String</div>
+              <div id="normalizedStringValue">-</div>
+            </div>
+            <div class="stat">
+              <div class="summary-label">Token Count</div>
+              <div id="tokenCountValue">0</div>
+            </div>
+          </div>
+
+          <div id="comparisonMessage" class="message warning">Load an example or paste a task, then run the library.</div>
+
+          <div>
+            <h3 class="section-title">Tokens</h3>
+            <div class="token-list" id="tokenList">
+              <span class="token-chip empty">No tokens yet</span>
+            </div>
+          </div>
+
+          <div class="split-output">
+            <div>
+              <h3 class="section-title">Validation</h3>
+              <pre class="output" id="validationOutput">Validation results will appear here.</pre>
+            </div>
+            <div>
+              <h3 class="section-title">Warnings</h3>
+              <pre class="output" id="warningsOutput">Warnings will appear here.</pre>
+            </div>
+            <div>
+              <h3 class="section-title">Actual Result JSON-LD</h3>
+              <pre class="output" id="resultOutput">Run the normalizer to inspect full output.</pre>
+            </div>
+            <div>
+              <h3 class="section-title">Expected Snapshot</h3>
+              <pre class="output" id="expectedOutput">Select an example to see its expected result snapshot.</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-note">
+          This page stays self-contained by inlining fixtures rather than fetching local JSON files. It is safe to
+          open directly from disk.
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="./keyNormalizer.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      var examples = [
+        {
+          id: "basic",
+          label: "Basic pipeline",
+          description: "Underscores, camelCase boundaries, pruning, and optional abbreviation expansion.",
+          task: {
+            "@type": "NormalizationTask",
+            "rawIdentifier": "n34_first_name_string",
+            "pipeline": {
+              "@type": "PipelineDefinition",
+              "@id": "urn:uuid:c2b1a8f9-4d3e-4b6a-9f1c-2e8d7a6b5c4d",
+              "rules": [
+                {
+                  "@id": "rule:1",
+                  "@type": "Rule",
+                  "phase": "Preparation",
+                  "order": 10,
+                  "ruleKind": "RegexReplace",
+                  "description": "Convert underscores to spaces",
+                  "pattern": "_",
+                  "flags": "g",
+                  "replacement": " "
+                },
+                {
+                  "@id": "rule:2",
+                  "@type": "Rule",
+                  "phase": "Transformation",
+                  "order": 20,
+                  "ruleKind": "RegexReplace",
+                  "description": "Split camelCase boundaries",
+                  "pattern": "([a-z])([A-Z])",
+                  "flags": "g",
+                  "replacement": "$1 $2"
+                },
+                {
+                  "@id": "rule:3",
+                  "@type": "Rule",
+                  "phase": "Pruning",
+                  "order": 30,
+                  "ruleKind": "RegexReplace",
+                  "description": "Remove technical type affixes",
+                  "pattern": "\\b(string|int|bool|arr|obj)\\b",
+                  "flags": "giu",
+                  "replacement": ""
+                },
+                {
+                  "@id": "rule:4",
+                  "@type": "Rule",
+                  "phase": "Enrichment",
+                  "order": 40,
+                  "ruleKind": "DictionaryExpand",
+                  "description": "Expand known abbreviations after tokenization",
+                  "inputKey": "abbreviationDictionary",
+                  "missingInputBehavior": "skipWithWarning"
+                }
+              ]
+            },
+            "inputs": {
+              "abbreviationDictionary": {
+                "fname": "first name",
+                "lname": "last name"
+              }
+            }
+          },
+          expected: {
+            "status": "succeeded",
+            "normalizedString": "n34 first name",
+            "tokens": ["n34", "first", "name"],
+            "warnings": []
+          }
+        },
+        {
+          id: "acronym",
+          label: "Acronym-aware camel case",
+          description: "Covers getURLData and acronym boundary handling before normal camel splits.",
+          task: {
+            "@type": "NormalizationTask",
+            "rawIdentifier": "getURLData_string",
+            "pipeline": {
+              "@type": "PipelineDefinition",
+              "@id": "urn:uuid:cb8fc1ef-4fd7-4226-92d7-592b7bb24e33",
+              "rules": [
+                {
+                  "@id": "rule:1",
+                  "@type": "Rule",
+                  "phase": "Preparation",
+                  "order": 10,
+                  "ruleKind": "RegexReplace",
+                  "description": "Convert underscores to spaces",
+                  "pattern": "_",
+                  "flags": "g",
+                  "replacement": " "
+                },
+                {
+                  "@id": "rule:2",
+                  "@type": "Rule",
+                  "phase": "Transformation",
+                  "order": 20,
+                  "ruleKind": "RegexReplace",
+                  "description": "Split acronym to word boundaries",
+                  "pattern": "([A-Z]+)([A-Z][a-z])",
+                  "flags": "g",
+                  "replacement": "$1 $2"
+                },
+                {
+                  "@id": "rule:3",
+                  "@type": "Rule",
+                  "phase": "Transformation",
+                  "order": 30,
+                  "ruleKind": "RegexReplace",
+                  "description": "Split lower to upper boundaries",
+                  "pattern": "([a-z0-9])([A-Z])",
+                  "flags": "g",
+                  "replacement": "$1 $2"
+                },
+                {
+                  "@id": "rule:4",
+                  "@type": "Rule",
+                  "phase": "Pruning",
+                  "order": 40,
+                  "ruleKind": "RegexReplace",
+                  "description": "Remove technical type affixes",
+                  "pattern": "\\b(string|int|bool|arr|obj)\\b",
+                  "flags": "giu",
+                  "replacement": ""
+                }
+              ]
+            }
+          },
+          expected: {
+            "status": "succeeded",
+            "normalizedString": "get url data",
+            "tokens": ["get", "url", "data"],
+            "warnings": []
+          }
+        },
+        {
+          id: "degraded",
+          label: "Degraded optional enrichment",
+          description: "Omits the optional dictionary to trigger a warning and continue.",
+          task: {
+            "@type": "NormalizationTask",
+            "rawIdentifier": "fname_string",
+            "pipeline": {
+              "@type": "PipelineDefinition",
+              "@id": "urn:uuid:5c6981c3-c71f-4dfd-a59f-1de2519aa55a",
+              "rules": [
+                {
+                  "@id": "rule:1",
+                  "@type": "Rule",
+                  "phase": "Preparation",
+                  "order": 10,
+                  "ruleKind": "RegexReplace",
+                  "description": "Convert underscores to spaces",
+                  "pattern": "_",
+                  "flags": "g",
+                  "replacement": " "
+                },
+                {
+                  "@id": "rule:2",
+                  "@type": "Rule",
+                  "phase": "Pruning",
+                  "order": 20,
+                  "ruleKind": "RegexReplace",
+                  "description": "Remove technical type affixes",
+                  "pattern": "\\b(string|int|bool|arr|obj)\\b",
+                  "flags": "giu",
+                  "replacement": ""
+                },
+                {
+                  "@id": "rule:3",
+                  "@type": "Rule",
+                  "phase": "Enrichment",
+                  "order": 30,
+                  "ruleKind": "DictionaryExpand",
+                  "description": "Expand abbreviations if supplied",
+                  "inputKey": "abbreviationDictionary",
+                  "missingInputBehavior": "skipWithWarning"
+                }
+              ]
+            }
+          },
+          expected: {
+            "status": "succeeded",
+            "normalizedString": "fname",
+            "tokens": ["fname"],
+            "warnings": [
+              {
+                "warningCode": "MISSING_OPTIONAL_INPUT",
+                "severity": "warning"
+              }
+            ]
+          }
+        },
+        {
+          id: "snake",
+          label: "Snake case",
+          description: "Confirms underscore-delimited identifiers tokenize cleanly.",
+          task: {
+            "@type": "NormalizationTask",
+            "rawIdentifier": "customer_primary_email",
+            "pipeline": {
+              "@type": "PipelineDefinition",
+              "@id": "urn:uuid:c29dc75e-9558-417d-a709-f72b7f8d95aa",
+              "rules": [
+                {
+                  "@id": "rule:1",
+                  "@type": "Rule",
+                  "phase": "Preparation",
+                  "order": 10,
+                  "ruleKind": "RegexReplace",
+                  "description": "Convert underscores to spaces",
+                  "pattern": "_",
+                  "flags": "g",
+                  "replacement": " "
+                }
+              ]
+            }
+          },
+          expected: {
+            "status": "succeeded",
+            "normalizedString": "customer primary email",
+            "tokens": ["customer", "primary", "email"],
+            "warnings": []
+          }
+        },
+        {
+          id: "kebab",
+          label: "Kebab case",
+          description: "Shows that hyphen-delimited identifiers are handled by canonical tokenization even without a replacement rule.",
+          task: {
+            "@type": "NormalizationTask",
+            "rawIdentifier": "customer-primary-email",
+            "pipeline": {
+              "@type": "PipelineDefinition",
+              "@id": "urn:uuid:f2e657f2-0358-43e5-8b8f-d4c621634021",
+              "rules": []
+            }
+          },
+          expected: {
+            "status": "succeeded",
+            "normalizedString": "customer primary email",
+            "tokens": ["customer", "primary", "email"],
+            "warnings": []
+          }
+        },
+        {
+          id: "wikiwords",
+          label: "WikiWords / PascalCase",
+          description: "Uses acronym-aware and standard camel boundary rules to split PascalCase-style identifiers.",
+          task: {
+            "@type": "NormalizationTask",
+            "rawIdentifier": "WikiWordExample",
+            "pipeline": {
+              "@type": "PipelineDefinition",
+              "@id": "urn:uuid:ca367721-f387-4b85-8fc6-5c08b7d7fc85",
+              "rules": [
+                {
+                  "@id": "rule:1",
+                  "@type": "Rule",
+                  "phase": "Transformation",
+                  "order": 10,
+                  "ruleKind": "RegexReplace",
+                  "description": "Split acronym to word boundaries",
+                  "pattern": "([A-Z]+)([A-Z][a-z])",
+                  "flags": "g",
+                  "replacement": "$1 $2"
+                },
+                {
+                  "@id": "rule:2",
+                  "@type": "Rule",
+                  "phase": "Transformation",
+                  "order": 20,
+                  "ruleKind": "RegexReplace",
+                  "description": "Split lower to upper boundaries",
+                  "pattern": "([a-z0-9])([A-Z])",
+                  "flags": "g",
+                  "replacement": "$1 $2"
+                }
+              ]
+            }
+          },
+          expected: {
+            "status": "succeeded",
+            "normalizedString": "wiki word example",
+            "tokens": ["wiki", "word", "example"],
+            "warnings": []
+          }
+        },
+        {
+          id: "unicode-nfc",
+          label: "Unicode NFC",
+          description: "Uses decomposed Unicode input and dictionary keys to verify NFC normalization before matching.",
+          task: {
+            "@type": "NormalizationTask",
+            "rawIdentifier": "Cafe\u0301Name",
+            "pipeline": {
+              "@type": "PipelineDefinition",
+              "@id": "urn:uuid:11d96c0f-d4bb-46ba-a83a-9000f456571e",
+              "rules": [
+                {
+                  "@id": "rule:1",
+                  "@type": "Rule",
+                  "phase": "Transformation",
+                  "order": 10,
+                  "ruleKind": "RegexReplace",
+                  "description": "Split lower to upper boundaries",
+                  "pattern": "([a-z\\u00E0-\\u024F])([A-Z])",
+                  "flags": "gu",
+                  "replacement": "$1 $2"
+                },
+                {
+                  "@id": "rule:2",
+                  "@type": "Rule",
+                  "phase": "Enrichment",
+                  "order": 20,
+                  "ruleKind": "DictionaryExpand",
+                  "description": "Expand NFC-normalized tokens",
+                  "inputKey": "unicodeDictionary",
+                  "missingInputBehavior": "fail"
+                }
+              ]
+            },
+            "inputs": {
+              "unicodeDictionary": {
+                "caf\u00E9": "coffee house"
+              }
+            }
+          },
+          expected: {
+            "status": "succeeded",
+            "normalizedString": "coffee house name",
+            "tokens": ["coffee", "house", "name"],
+            "warnings": []
+          }
+        },
+        {
+          id: "invalid",
+          label: "Invalid duplicate order",
+          description: "Demonstrates deterministic failure before any rule executes.",
+          task: {
+            "@type": "NormalizationTask",
+            "rawIdentifier": "n34_first_name_string",
+            "pipeline": {
+              "@type": "PipelineDefinition",
+              "@id": "urn:uuid:38332758-c0bc-4ad5-9f0f-b0da159bf1aa",
+              "rules": [
+                {
+                  "@id": "rule:1",
+                  "@type": "Rule",
+                  "phase": "Preparation",
+                  "order": 10,
+                  "ruleKind": "RegexReplace",
+                  "description": "Convert underscores to spaces",
+                  "pattern": "_",
+                  "flags": "g",
+                  "replacement": " "
+                },
+                {
+                  "@id": "rule:2",
+                  "@type": "Rule",
+                  "phase": "Transformation",
+                  "order": 10,
+                  "ruleKind": "RegexReplace",
+                  "description": "Split camelCase boundaries",
+                  "pattern": "([a-z])([A-Z])",
+                  "flags": "g",
+                  "replacement": "$1 $2"
+                }
+              ]
+            }
+          },
+          expected: {
+            "status": "failed",
+            "normalizedString": "n34_first_name_string",
+            "tokens": [],
+            "warnings": [
+              {
+                "warningCode": "INVALID_PIPELINE",
+                "severity": "error"
+              }
+            ]
+          }
+        }
+      ];
+
+      var elements = {
+        exampleSelect: document.getElementById("exampleSelect"),
+        loadExampleButton: document.getElementById("loadExampleButton"),
+        runButton: document.getElementById("runButton"),
+        formatButton: document.getElementById("formatButton"),
+        copyTaskButton: document.getElementById("copyTaskButton"),
+        copyResultButton: document.getElementById("copyResultButton"),
+        taskInput: document.getElementById("taskInput"),
+        validationOutput: document.getElementById("validationOutput"),
+        warningsOutput: document.getElementById("warningsOutput"),
+        resultOutput: document.getElementById("resultOutput"),
+        expectedOutput: document.getElementById("expectedOutput"),
+        statusValue: document.getElementById("statusValue"),
+        normalizedStringValue: document.getElementById("normalizedStringValue"),
+        tokenCountValue: document.getElementById("tokenCountValue"),
+        tokenList: document.getElementById("tokenList"),
+        comparisonMessage: document.getElementById("comparisonMessage"),
+        libraryStatus: document.getElementById("libraryStatus"),
+        selectedExampleLabel: document.getElementById("selectedExampleLabel"),
+        matchSummary: document.getElementById("matchSummary"),
+        warningSummary: document.getElementById("warningSummary")
+      };
+
+      var lastResultText = "";
+      var lastMatchedExample = null;
+
+      function prettyStringify(value) {
+        return JSON.stringify(value, null, 2);
+      }
+
+      function canonicalize(value) {
+        var result;
+        var keys;
+
+        if (Array.isArray(value)) {
+          return value.map(canonicalize);
+        }
+
+        if (value && typeof value === "object") {
+          result = {};
+          keys = Object.keys(value).sort();
+          keys.forEach(function (key) {
+            result[key] = canonicalize(value[key]);
+          });
+          return result;
+        }
+
+        return value;
+      }
+
+      function canonicalStringify(value) {
+        return JSON.stringify(canonicalize(value));
+      }
+
+      function getSelectedExample() {
+        var selectedId = elements.exampleSelect.value;
+        return examples.find(function (example) {
+          return example.id === selectedId;
+        }) || examples[0];
+      }
+
+      function populateExampleSelect() {
+        examples.forEach(function (example) {
+          var option = document.createElement("option");
+          option.value = example.id;
+          option.textContent = example.label;
+          elements.exampleSelect.appendChild(option);
+        });
+      }
+
+      function inferExampleFromTask(task) {
+        var taskSignature = canonicalStringify(task);
+
+        return examples.find(function (example) {
+          return canonicalStringify(example.task) === taskSignature;
+        }) || null;
+      }
+
+      function updateMatchedExample(example) {
+        lastMatchedExample = example;
+
+        if (example) {
+          elements.selectedExampleLabel.textContent = example.label;
+          elements.expectedOutput.textContent = prettyStringify(example.expected);
+          elements.matchSummary.textContent = "Pending";
+          return;
+        }
+
+        elements.selectedExampleLabel.textContent = "Custom task";
+        elements.expectedOutput.textContent = "No expected snapshot for this payload yet.\n\nLoad a fixture to compare against a curated example, or keep editing this task as a custom scenario.";
+        elements.matchSummary.textContent = "Custom";
+      }
+
+      function setMessage(kind, text) {
+        elements.comparisonMessage.className = "message " + kind;
+        elements.comparisonMessage.textContent = text;
+      }
+
+      function setTokens(tokens) {
+        var fragment = document.createDocumentFragment();
+
+        elements.tokenList.innerHTML = "";
+
+        if (!tokens.length) {
+          var emptyChip = document.createElement("span");
+          emptyChip.className = "token-chip empty";
+          emptyChip.textContent = "No tokens";
+          elements.tokenList.appendChild(emptyChip);
+          return;
+        }
+
+        tokens.forEach(function (token) {
+          var chip = document.createElement("span");
+          chip.className = "token-chip";
+          chip.textContent = token;
+          fragment.appendChild(chip);
+        });
+
+        elements.tokenList.appendChild(fragment);
+      }
+
+      function loadExample() {
+        var example = getSelectedExample();
+        elements.taskInput.value = prettyStringify(example.task);
+        updateMatchedExample(example);
+        setMessage("warning", example.description);
+      }
+
+      function tryCopy(text, button) {
+        function fallbackCopy() {
+          var temp = document.createElement("textarea");
+          temp.value = text;
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand("copy");
+          document.body.removeChild(temp);
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(function () {
+            button.textContent = "Copied";
+            window.setTimeout(function () {
+              button.textContent = button.getAttribute("data-label");
+            }, 1200);
+          }).catch(function () {
+            fallbackCopy();
+          });
+          return;
+        }
+
+        fallbackCopy();
+        button.textContent = "Copied";
+        window.setTimeout(function () {
+          button.textContent = button.getAttribute("data-label");
+        }, 1200);
+      }
+
+      function summarizeValidation(validation) {
+        if (validation.valid) {
+          return "Task is valid.\n\nSorted rule order:\n" + validation.sortedRules.map(function (rule) {
+            return "- " + rule.order + " :: " + (rule["@id"] || rule.description || rule.ruleKind);
+          }).join("\n");
+        }
+
+        return "Task is invalid.\n\nErrors:\n" + validation.errors.map(function (error) {
+          return "- [" + error.code + "] " + error.message;
+        }).join("\n");
+      }
+
+      function syncEditorContext() {
+        var parsedTask;
+        var matchedExample;
+
+        try {
+          parsedTask = JSON.parse(elements.taskInput.value);
+        } catch (error) {
+          updateMatchedExample(null);
+          return null;
+        }
+
+        matchedExample = inferExampleFromTask(parsedTask);
+        updateMatchedExample(matchedExample);
+        return matchedExample;
+      }
+
+      function compareWarnings(actualWarnings, expectedWarnings) {
+        var issues = [];
+
+        if (actualWarnings.length !== expectedWarnings.length) {
+          issues.push("Expected " + expectedWarnings.length + " warning(s) but received " + actualWarnings.length + ".");
+        }
+
+        expectedWarnings.forEach(function (expectedWarning, index) {
+          var actualWarning = actualWarnings[index];
+          if (!actualWarning) {
+            return;
+          }
+
+          if (expectedWarning.warningCode && actualWarning.warningCode !== expectedWarning.warningCode) {
+            issues.push("Warning " + (index + 1) + " code mismatch: expected " + expectedWarning.warningCode + " but received " + actualWarning.warningCode + ".");
+          }
+
+          if (expectedWarning.severity && actualWarning.severity !== expectedWarning.severity) {
+            issues.push("Warning " + (index + 1) + " severity mismatch: expected " + expectedWarning.severity + " but received " + actualWarning.severity + ".");
+          }
+        });
+
+        return issues;
+      }
+
+      function compareResult(actualResult, expected) {
+        var issues = [];
+        var actualWarnings = actualResult.metadata && Array.isArray(actualResult.metadata.warnings)
+          ? actualResult.metadata.warnings
+          : [];
+
+        if ((actualResult.metadata && actualResult.metadata.status) !== expected.status) {
+          issues.push("Status mismatch: expected " + expected.status + " but received " + actualResult.metadata.status + ".");
+        }
+
+        if (actualResult.normalizedString !== expected.normalizedString) {
+          issues.push("Normalized string mismatch: expected '" + expected.normalizedString + "' but received '" + actualResult.normalizedString + "'.");
+        }
+
+        if (JSON.stringify(actualResult.tokens) !== JSON.stringify(expected.tokens)) {
+          issues.push("Token mismatch: expected " + JSON.stringify(expected.tokens) + " but received " + JSON.stringify(actualResult.tokens) + ".");
+        }
+
+        return issues.concat(compareWarnings(actualWarnings, expected.warnings || []));
+      }
+
+      function runNormalization() {
+        var parsedTask;
+        var validation;
+        var result;
+        var example;
+        var comparisonIssues;
+
+        try {
+          parsedTask = JSON.parse(elements.taskInput.value);
+        } catch (error) {
+          elements.validationOutput.textContent = "Invalid JSON:\n- " + error.message;
+          elements.warningsOutput.textContent = "No execution warnings because parsing failed.";
+          elements.resultOutput.textContent = "Parsing failed before execution.";
+          elements.statusValue.textContent = "parse-error";
+          elements.normalizedStringValue.textContent = "-";
+          elements.tokenCountValue.textContent = "0";
+          elements.warningSummary.textContent = "0";
+          setTokens([]);
+          setMessage("error", "The JSON payload could not be parsed. Fix the editor contents and try again.");
+          elements.matchSummary.textContent = "No";
+          lastResultText = "";
+          return;
+        }
+
+        example = inferExampleFromTask(parsedTask);
+        updateMatchedExample(example);
+        validation = window.KeyNormalizer.validateTask(parsedTask);
+        result = window.KeyNormalizer.normalize(parsedTask);
+        comparisonIssues = example ? compareResult(result, example.expected) : [];
+        lastResultText = prettyStringify(result);
+
+        elements.validationOutput.textContent = summarizeValidation(validation);
+        elements.warningsOutput.textContent = result.metadata.warnings.length
+          ? prettyStringify(result.metadata.warnings)
+          : "No warnings.";
+        elements.resultOutput.textContent = lastResultText;
+        elements.statusValue.textContent = result.metadata.status;
+        elements.normalizedStringValue.textContent = result.normalizedString || "-";
+        elements.tokenCountValue.textContent = String(result.tokens.length);
+        elements.warningSummary.textContent = String(result.metadata.warnings.length);
+        setTokens(result.tokens);
+
+        if (!example) {
+          setMessage("success", "Custom task detected. The library ran against the current payload, and expected snapshot comparison was skipped because this editor state does not match a built-in fixture.");
+          elements.matchSummary.textContent = "Custom";
+        } else if (comparisonIssues.length) {
+          setMessage("error", "Expected snapshot mismatch.\n\n" + comparisonIssues.join(" "));
+          elements.matchSummary.textContent = "No";
+        } else if (result.metadata.warnings.length) {
+          setMessage("warning", "Result matches the expected snapshot and includes " + result.metadata.warnings.length + " warning(s).");
+          elements.matchSummary.textContent = "Yes";
+        } else {
+          setMessage("success", "Result matches the expected snapshot exactly.");
+          elements.matchSummary.textContent = "Yes";
+        }
+      }
+
+      function formatEditorJson() {
+        try {
+          elements.taskInput.value = prettyStringify(JSON.parse(elements.taskInput.value));
+          syncEditorContext();
+        } catch (error) {
+          setMessage("error", "JSON formatting failed because the editor contents are not valid JSON.");
+        }
+      }
+
+      function initialize() {
+        if (!window.KeyNormalizer || typeof window.KeyNormalizer.normalize !== "function") {
+          elements.libraryStatus.textContent = "Library load failed";
+          setMessage("error", "keyNormalizer.js could not be loaded. Confirm the file is next to this HTML page.");
+          return;
+        }
+
+        elements.libraryStatus.textContent = "Loaded v" + window.KeyNormalizer.version;
+
+        [
+          elements.copyTaskButton,
+          elements.copyResultButton
+        ].forEach(function (button) {
+          button.setAttribute("data-label", button.textContent);
+        });
+
+        populateExampleSelect();
+        elements.exampleSelect.value = examples[0].id;
+        loadExample();
+        runNormalization();
+
+        elements.loadExampleButton.addEventListener("click", loadExample);
+        elements.runButton.addEventListener("click", runNormalization);
+        elements.formatButton.addEventListener("click", formatEditorJson);
+        elements.exampleSelect.addEventListener("change", loadExample);
+        elements.taskInput.addEventListener("input", syncEditorContext);
+        elements.copyTaskButton.addEventListener("click", function () {
+          tryCopy(elements.taskInput.value, elements.copyTaskButton);
+        });
+        elements.copyResultButton.addEventListener("click", function () {
+          tryCopy(lastResultText || elements.resultOutput.textContent, elements.copyResultButton);
+        });
+      }
+
+      initialize();
+    }());
+  </script>
+</body>
+</html>
