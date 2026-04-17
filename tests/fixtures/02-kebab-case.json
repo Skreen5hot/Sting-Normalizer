@@ -1,0 +1,17 @@
+{
+  "name": "kebab-case tokenizes on hyphen",
+  "task": {
+    "@type": "NormalizationTask",
+    "rawIdentifier": "user-full-name",
+    "pipeline": {
+      "@type": "PipelineDefinition",
+      "rules": []
+    }
+  },
+  "expected": {
+    "status": "succeeded",
+    "tokens": ["user", "full", "name"],
+    "normalizedString": "user full name",
+    "warningCodes": []
+  }
+}

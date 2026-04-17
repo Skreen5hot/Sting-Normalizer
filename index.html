@@ -6,25 +6,24 @@
   <title>Schema Title Normalizer</title>
   <style>
     :root {
-      --bg: #f6f2ea;
-      --panel: rgba(255, 251, 245, 0.9);
-      --panel-strong: rgba(255, 248, 241, 0.98);
-      --ink: #1e1b18;
-      --muted: #6a6057;
-      --line: rgba(56, 39, 24, 0.14);
-      --accent: #9d4a22;
-      --accent-strong: #7f3616;
-      --accent-soft: rgba(157, 74, 34, 0.12);
-      --accent-2: #2f6956;
-      --accent-2-soft: rgba(47, 105, 86, 0.12);
-      --error: #8c2020;
-      --error-soft: rgba(140, 32, 32, 0.12);
-      --warn: #8b6206;
-      --warn-soft: rgba(139, 98, 6, 0.12);
-      --shadow: 0 18px 48px rgba(44, 24, 10, 0.12);
+      --bg: #f6f1e8;
+      --panel: rgba(255, 251, 245, 0.92);
+      --panel-strong: rgba(255, 248, 240, 0.98);
+      --ink: #1d1a17;
+      --muted: #6a6058;
+      --line: rgba(55, 38, 21, 0.14);
+      --accent: #a04a22;
+      --accent-strong: #7f3515;
+      --accent-soft: rgba(160, 74, 34, 0.12);
+      --accent-2: #2f6856;
+      --accent-2-soft: rgba(47, 104, 86, 0.12);
+      --warn: #856000;
+      --warn-soft: rgba(133, 96, 0, 0.12);
+      --error: #8d1e1e;
+      --error-soft: rgba(141, 30, 30, 0.12);
+      --shadow: 0 18px 48px rgba(43, 24, 11, 0.12);
       --radius-lg: 24px;
       --radius-md: 18px;
-      --radius-sm: 12px;
       --mono: "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
       --serif: "Georgia", "Times New Roman", serif;
     }
@@ -39,14 +38,14 @@
       color: var(--ink);
       font-family: var(--serif);
       background:
-        radial-gradient(circle at top left, rgba(157, 74, 34, 0.17), transparent 28%),
-        radial-gradient(circle at top right, rgba(47, 105, 86, 0.14), transparent 24%),
-        linear-gradient(180deg, #f8f4ee 0%, #f3ede5 55%, #ece5dc 100%);
+        radial-gradient(circle at top left, rgba(160, 74, 34, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(47, 104, 86, 0.14), transparent 24%),
+        linear-gradient(180deg, #f9f4ed 0%, #f2ebe2 54%, #ece4da 100%);
     }
 
     .page {
-      width: min(1440px, calc(100% - 28px));
-      margin: 16px auto 32px;
+      width: min(1460px, calc(100% - 28px));
+      margin: 18px auto 30px;
     }
 
     .hero,
@@ -78,18 +77,21 @@
     h2,
     h3 {
       margin: 0;
-      line-height: 1.05;
+      line-height: 1.06;
     }
 
     h1 {
       font-size: clamp(2rem, 3vw, 3.1rem);
-      max-width: 14ch;
+      max-width: 15ch;
     }
 
-    .hero p,
-    .panel-copy,
-    .summary-text {
+    p {
       margin: 0;
+    }
+
+    .hero-copy,
+    .panel-copy,
+    .small-note {
       color: var(--muted);
       line-height: 1.58;
     }
@@ -111,8 +113,8 @@
       align-items: center;
       padding: 10px 14px;
       border-radius: 999px;
+      border: 1px solid rgba(55, 38, 21, 0.1);
       background: rgba(255, 255, 255, 0.72);
-      border: 1px solid rgba(56, 39, 24, 0.1);
       font-size: 0.9rem;
     }
 
@@ -123,7 +125,8 @@
       align-content: start;
     }
 
-    .summary-card {
+    .summary-card,
+    .stat {
       padding: 16px;
       border-radius: var(--radius-md);
       background: var(--panel-strong);
@@ -139,7 +142,7 @@
     }
 
     .summary-value {
-      font-size: 1.1rem;
+      font-size: 1.08rem;
     }
 
     .layout {
@@ -155,8 +158,8 @@
     .panel-header {
       display: flex;
       justify-content: space-between;
-      align-items: start;
       gap: 16px;
+      align-items: start;
       margin-bottom: 14px;
     }
 
@@ -180,38 +183,37 @@
     }
 
     button,
-    textarea,
-    select {
+    textarea {
       font: inherit;
     }
 
     button {
       min-height: 44px;
+      padding: 0 18px;
       border: 0;
       border-radius: 999px;
-      padding: 0 18px;
       cursor: pointer;
       transition: transform 120ms ease, box-shadow 120ms ease;
     }
 
     button:hover {
       transform: translateY(-1px);
-      box-shadow: 0 10px 20px rgba(41, 21, 9, 0.1);
+      box-shadow: 0 10px 20px rgba(41, 21, 8, 0.1);
     }
 
     .button-primary {
       background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-      color: #fffaf5;
+      color: #fffaf4;
     }
 
     .button-secondary {
       background: rgba(255, 255, 255, 0.84);
       color: var(--ink);
-      border: 1px solid rgba(56, 39, 24, 0.12);
+      border: 1px solid rgba(55, 38, 21, 0.12);
     }
 
     .button-accent {
-      background: linear-gradient(135deg, #3c7b65, #2e6654);
+      background: linear-gradient(135deg, #3d7b66, #2c6552);
       color: #f7fffb;
     }
 
@@ -221,51 +223,59 @@
       gap: 10px;
       padding: 10px 14px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.75);
-      border: 1px solid rgba(56, 39, 24, 0.1);
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(55, 38, 21, 0.1);
     }
 
     textarea,
     .output {
       width: 100%;
-      min-height: 580px;
       padding: 14px 16px;
       border-radius: var(--radius-md);
-      border: 1px solid rgba(56, 39, 24, 0.14);
-      background: rgba(255, 252, 248, 0.94);
+      border: 1px solid rgba(55, 38, 21, 0.14);
+      background: rgba(255, 252, 248, 0.95);
       color: var(--ink);
       font-family: var(--mono);
       font-size: 0.9rem;
-      line-height: 1.52;
+      line-height: 1.54;
       resize: vertical;
       white-space: pre-wrap;
       word-break: break-word;
     }
 
+    #inputSchema,
+    .output {
+      min-height: 560px;
+    }
+
+    #dictionaryInput {
+      min-height: 180px;
+    }
+
     .message {
+      margin-bottom: 14px;
       padding: 14px 16px;
       border-radius: var(--radius-md);
       border: 1px solid transparent;
       line-height: 1.5;
-      margin-bottom: 14px;
     }
 
     .message.success {
       background: var(--accent-2-soft);
-      color: #1f483d;
-      border-color: rgba(47, 105, 86, 0.18);
+      color: #21473c;
+      border-color: rgba(47, 104, 86, 0.18);
     }
 
     .message.warning {
       background: var(--warn-soft);
-      color: #6f4f05;
-      border-color: rgba(139, 98, 6, 0.18);
+      color: #6e4d00;
+      border-color: rgba(133, 96, 0, 0.18);
     }
 
     .message.error {
       background: var(--error-soft);
-      color: #6a1717;
-      border-color: rgba(140, 32, 32, 0.18);
+      color: #681616;
+      border-color: rgba(141, 30, 30, 0.18);
     }
 
     .stats {
@@ -275,26 +285,17 @@
       margin-bottom: 14px;
     }
 
-    .stat {
-      padding: 14px;
-      border-radius: var(--radius-md);
-      background: var(--panel-strong);
-      border: 1px solid var(--line);
-    }
-
-    .small-note {
-      margin-top: 14px;
-      padding: 12px 14px;
-      border-radius: var(--radius-md);
-      background: rgba(255, 255, 255, 0.62);
-      border: 1px solid rgba(56, 39, 24, 0.08);
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
     code {
       font-family: var(--mono);
       font-size: 0.92em;
+    }
+
+    .small-note {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.64);
+      border: 1px solid rgba(55, 38, 21, 0.08);
     }
 
     @media (max-width: 1120px) {
@@ -306,7 +307,7 @@
 
     @media (max-width: 720px) {
       .page {
-        width: min(100% - 18px, 1440px);
+        width: min(100% - 18px, 1460px);
       }
 
       .hero,
@@ -319,7 +320,7 @@
         grid-template-columns: 1fr;
       }
 
-      textarea,
+      #inputSchema,
       .output {
         min-height: 420px;
       }
@@ -333,12 +334,13 @@
         <div class="eyebrow">Schema Utility</div>
         <h1>Schema Title Normalizer</h1>
         <p class="hero-copy">
-          Paste a JSON Schema, normalize schema keys into human-readable titles, and get back an updated schema with
-          <code>"title": "{normalizedName}"</code> inserted or replaced where appropriate.
+          Paste a JSON Schema, optionally provide an abbreviation dictionary, and generate normalized
+          <code>title</code> values from schema keys such as <code>first_name</code>, <code>lastName</code>,
+          or <code>roi_value</code>.
         </p>
         <div class="pill-row">
           <div class="pill">Uses local <code>keyNormalizer.js</code></div>
-          <div class="pill">No dependencies</div>
+          <div class="pill">Optional abbreviation expansion</div>
           <div class="pill">Runs fully offline</div>
         </div>
       </div>
@@ -368,7 +370,7 @@
         <div class="panel-header">
           <div class="panel-title">
             <h2>Input Schema</h2>
-            <p class="panel-copy">Paste any JSON Schema. The transformer will recurse through common schema containers such as <code>properties</code>, <code>$defs</code>, <code>definitions</code>, <code>items</code>, and composition keywords.</p>
+            <p class="panel-copy">Paste any JSON Schema. The transformer recurses through common schema containers such as <code>properties</code>, <code>$defs</code>, <code>definitions</code>, <code>items</code>, and composition keywords.</p>
           </div>
         </div>
 
@@ -380,6 +382,12 @@
             <button class="button-secondary" id="copyInputButton" type="button">Copy Input</button>
           </div>
 
+          <div class="toolbar">
+            <button class="button-secondary" id="loadSampleDictionaryButton" type="button">Load Sample Dictionary</button>
+            <button class="button-secondary" id="formatDictionaryButton" type="button">Format Dictionary</button>
+            <button class="button-secondary" id="copyDictionaryButton" type="button">Copy Dictionary</button>
+          </div>
+
           <div class="toggle-row">
             <label class="toggle">
               <input id="overwriteTitlesCheckbox" type="checkbox" checked>
@@ -387,19 +395,25 @@
             </label>
             <label class="toggle">
               <input id="normalizeRootCheckbox" type="checkbox">
-              Normalize root title from <code>$id</code> or schema name when possible
+              Normalize root title from <code>$id</code> when possible
             </label>
           </div>
         </div>
 
         <textarea id="inputSchema" spellcheck="false" aria-label="Input JSON Schema"></textarea>
+
+        <div class="small-note">
+          Optional abbreviation dictionary: use a plain JSON object map such as
+          <code>{ "roi": "return on investment", "api": "application programming interface" }</code>.
+        </div>
+        <textarea id="dictionaryInput" spellcheck="false" aria-label="Optional abbreviation dictionary JSON"></textarea>
       </section>
 
       <section class="panel">
         <div class="panel-header">
           <div class="panel-title">
             <h2>Output Schema</h2>
-            <p class="panel-copy">The result shows the transformed JSON Schema plus a short run summary.</p>
+            <p class="panel-copy">The result shows the transformed schema plus a short run summary.</p>
           </div>
           <div class="toolbar">
             <button class="button-secondary" id="copyOutputButton" type="button">Copy Output</button>
@@ -430,8 +444,8 @@
         <pre class="output" id="outputSchema">Normalized schema output will appear here.</pre>
 
         <div class="small-note">
-          Title generation is based on schema keys such as property names and definition names. Pattern-based containers
-          like <code>patternProperties</code> are traversed, but their regex keys are not converted into titles.
+          The dictionary is only used for title generation on this page. It does not change
+          <code>keyNormalizer.js</code> or the core runtime engine.
         </div>
       </section>
     </section>
@@ -453,13 +467,17 @@
         errorSummary: document.getElementById("errorSummary"),
         messageBox: document.getElementById("messageBox"),
         inputSchema: document.getElementById("inputSchema"),
+        dictionaryInput: document.getElementById("dictionaryInput"),
         outputSchema: document.getElementById("outputSchema"),
         overwriteTitlesCheckbox: document.getElementById("overwriteTitlesCheckbox"),
         normalizeRootCheckbox: document.getElementById("normalizeRootCheckbox"),
         loadSampleButton: document.getElementById("loadSampleButton"),
+        loadSampleDictionaryButton: document.getElementById("loadSampleDictionaryButton"),
         normalizeButton: document.getElementById("normalizeButton"),
         formatInputButton: document.getElementById("formatInputButton"),
+        formatDictionaryButton: document.getElementById("formatDictionaryButton"),
         copyInputButton: document.getElementById("copyInputButton"),
+        copyDictionaryButton: document.getElementById("copyDictionaryButton"),
         copyOutputButton: document.getElementById("copyOutputButton")
       };
 
@@ -467,6 +485,9 @@
         "$id": "customer_profile.schema.json",
         "type": "object",
         "properties": {
+          "api_key": {
+            "type": "string"
+          },
           "first_name": {
             "type": "string"
           },
@@ -477,9 +498,15 @@
             "type": "string",
             "title": "Old Url Field"
           },
+          "roi_value": {
+            "type": "number"
+          },
           "contact_details": {
             "type": "object",
             "properties": {
+              "atm_id": {
+                "type": "string"
+              },
               "primary_email": {
                 "type": "string"
               },
@@ -504,8 +531,40 @@
         }
       };
 
+      var sampleDictionary = {
+        "api": "application programming interface",
+        "atm": "automated teller machine",
+        "roi": "return on investment",
+        "url": "uniform resource locator"
+      };
+
       function prettyStringify(value) {
         return JSON.stringify(value, null, 2);
+      }
+
+      function isPlainObject(value) {
+        return Object.prototype.toString.call(value) === "[object Object]";
+      }
+
+      function clone(value) {
+        var key;
+        var copy;
+
+        if (Array.isArray(value)) {
+          return value.map(clone);
+        }
+
+        if (isPlainObject(value)) {
+          copy = {};
+          for (key in value) {
+            if (Object.prototype.hasOwnProperty.call(value, key)) {
+              copy[key] = clone(value[key]);
+            }
+          }
+          return copy;
+        }
+
+        return value;
       }
 
       function setMessage(kind, text) {
@@ -537,64 +596,79 @@
         elements.errorSummary.textContent = "None";
       }
 
-      function isPlainObject(value) {
-        return Object.prototype.toString.call(value) === "[object Object]";
-      }
+      function validateDictionary(dictionary) {
+        var key;
 
-      function clone(value) {
-        if (Array.isArray(value)) {
-          return value.map(clone);
+        if (!isPlainObject(dictionary)) {
+          throw new Error("Abbreviation dictionary must be a plain JSON object of string-to-string entries.");
         }
 
-        if (isPlainObject(value)) {
-          return Object.keys(value).reduce(function (copy, key) {
-            copy[key] = clone(value[key]);
-            return copy;
-          }, {});
-        }
-
-        return value;
-      }
-
-      function createTitleTask(identifier) {
-        return {
-          "@type": "NormalizationTask",
-          "rawIdentifier": identifier,
-          "pipeline": {
-            "@type": "PipelineDefinition",
-            "rules": [
-              {
-                "@type": "Rule",
-                "phase": "Preparation",
-                "order": 10,
-                "ruleKind": "RegexReplace",
-                "pattern": "([A-Z]+)([A-Z][a-z])",
-                "flags": "g",
-                "replacement": "$1 $2"
-              },
-              {
-                "@type": "Rule",
-                "phase": "Transformation",
-                "order": 20,
-                "ruleKind": "RegexReplace",
-                "pattern": "([a-z0-9])([A-Z])",
-                "flags": "g",
-                "replacement": "$1 $2"
-              }
-            ]
+        for (key in dictionary) {
+          if (Object.prototype.hasOwnProperty.call(dictionary, key) && typeof dictionary[key] !== "string") {
+            throw new Error("Abbreviation dictionary value for key '" + key + "' must be a string.");
           }
+        }
+      }
+
+      function parseDictionaryInput() {
+        var raw = elements.dictionaryInput.value.trim();
+        var parsed;
+
+        if (!raw) {
+          return {};
+        }
+
+        parsed = JSON.parse(raw);
+        validateDictionary(parsed);
+        return parsed;
+      }
+
+      function buildTitleRunner(abbreviationDictionary) {
+        var pipeline = {
+          "@type": "PipelineDefinition",
+          "rules": [
+            {
+              "@type": "Rule",
+              "phase": "Preparation",
+              "order": 10,
+              "ruleKind": "RegexReplace",
+              "pattern": "([A-Z]+)([A-Z][a-z])",
+              "flags": "g",
+              "replacement": "$1 $2"
+            },
+            {
+              "@type": "Rule",
+              "phase": "Transformation",
+              "order": 20,
+              "ruleKind": "RegexReplace",
+              "pattern": "([a-z0-9])([A-Z])",
+              "flags": "g",
+              "replacement": "$1 $2"
+            }
+          ]
         };
+        var inputs;
+
+        if (isPlainObject(abbreviationDictionary) && Object.keys(abbreviationDictionary).length > 0) {
+          pipeline.rules.push({
+            "@type": "Rule",
+            "phase": "Enrichment",
+            "order": 30,
+            "ruleKind": "DictionaryExpand",
+            "inputKey": "abbreviationDictionary",
+            "missingInputBehavior": "skipWithWarning"
+          });
+          inputs = { "abbreviationDictionary": abbreviationDictionary };
+        }
+
+        return window.KeyNormalizer.compile(pipeline, inputs);
       }
 
       function capitalizeToken(token) {
-        if (!token) {
-          return token;
-        }
-
-        return token.charAt(0).toUpperCase() + token.slice(1);
+        return token ? token.charAt(0).toUpperCase() + token.slice(1) : token;
       }
 
-      function normalizeNameToTitle(name) {
+      function normalizeNameToTitle(name, runner) {
         var result;
         var tokens;
 
@@ -602,7 +676,7 @@
           return "";
         }
 
-        result = window.KeyNormalizer.normalize(createTitleTask(name));
+        result = runner.run(name);
         tokens = Array.isArray(result.tokens) ? result.tokens : [];
 
         if (!tokens.length) {
@@ -629,14 +703,6 @@
         return "";
       }
 
-      function shouldSetTitle(existingTitle, overwriteTitles) {
-        if (overwriteTitles) {
-          return true;
-        }
-
-        return typeof existingTitle !== "string" || existingTitle.trim() === "";
-      }
-
       function applyTitleToSchema(schemaNode, keyName, options, stats) {
         var normalizedTitle;
 
@@ -644,7 +710,7 @@
           return;
         }
 
-        normalizedTitle = normalizeNameToTitle(keyName);
+        normalizedTitle = normalizeNameToTitle(keyName, options.runner);
         if (!normalizedTitle) {
           return;
         }
@@ -671,7 +737,6 @@
         var mapContainers;
         var schemaMapKeys;
         var schemaArrayKeys;
-        var index;
 
         if (!isPlainObject(schemaNode)) {
           return schemaNode;
@@ -721,37 +786,24 @@
         ];
 
         schemaMapKeys.forEach(function (childKey) {
-          var child = schemaNode[childKey];
-
-          if (isPlainObject(child)) {
-            schemaNode[childKey] = traverseSchema(child, null, options, stats);
+          if (isPlainObject(schemaNode[childKey])) {
+            schemaNode[childKey] = traverseSchema(schemaNode[childKey], null, options, stats);
           }
         });
 
         schemaArrayKeys = ["allOf", "anyOf", "oneOf", "prefixItems"];
-
         schemaArrayKeys.forEach(function (childKey) {
-          if (!Array.isArray(schemaNode[childKey])) {
-            return;
+          if (Array.isArray(schemaNode[childKey])) {
+            schemaNode[childKey] = schemaNode[childKey].map(function (childSchema) {
+              return traverseSchema(childSchema, null, options, stats);
+            });
           }
-
-          schemaNode[childKey] = schemaNode[childKey].map(function (childSchema) {
-            return traverseSchema(childSchema, null, options, stats);
-          });
         });
 
         if (Array.isArray(schemaNode.items)) {
           schemaNode.items = schemaNode.items.map(function (childSchema) {
             return traverseSchema(childSchema, null, options, stats);
           });
-        }
-
-        if (Array.isArray(schemaNode.examples)) {
-          for (index = 0; index < schemaNode.examples.length; index += 1) {
-            if (isPlainObject(schemaNode.examples[index])) {
-              schemaNode.examples[index] = clone(schemaNode.examples[index]);
-            }
-          }
         }
 
         return schemaNode;
@@ -806,6 +858,7 @@
 
       function normalizeInput() {
         var parsedSchema;
+        var abbreviationDictionary;
         var result;
         var options;
 
@@ -816,14 +869,35 @@
           elements.outputSchema.textContent = "Input parsing failed.";
           elements.statusSummary.textContent = "Parse Error";
           elements.errorSummary.textContent = error.message;
-          setMessage("error", "The input is not valid JSON. Fix the schema and try again.");
+          setMessage("error", "The schema input is not valid JSON. Fix it and try again.");
           return;
         }
 
         try {
+          abbreviationDictionary = parseDictionaryInput();
+        } catch (error) {
+          resetRunState();
+          elements.outputSchema.textContent = "Dictionary parsing failed.";
+          elements.statusSummary.textContent = "Dictionary Error";
+          elements.errorSummary.textContent = error.message;
+          setMessage("error", error.message);
+          return;
+        }
+
+        try {
+          var runner = buildTitleRunner(abbreviationDictionary);
+          if (!runner.valid) {
+            resetRunState();
+            elements.outputSchema.textContent = "Pipeline compilation failed.";
+            elements.statusSummary.textContent = "Pipeline Error";
+            elements.errorSummary.textContent = runner.errors.map(function (e) { return e.message; }).join(" | ");
+            setMessage("error", "Title pipeline failed to compile: " + elements.errorSummary.textContent);
+            return;
+          }
           options = {
             overwriteTitles: elements.overwriteTitlesCheckbox.checked,
-            normalizeRootTitle: elements.normalizeRootCheckbox.checked
+            normalizeRootTitle: elements.normalizeRootCheckbox.checked,
+            runner: runner
           };
           result = normalizeSchemaTitles(parsedSchema, options);
           elements.outputSchema.textContent = prettyStringify(result.schema);
@@ -844,15 +918,29 @@
         try {
           elements.inputSchema.value = prettyStringify(JSON.parse(elements.inputSchema.value));
         } catch (error) {
-          setMessage("error", "Input formatting failed because the current editor contents are not valid JSON.");
+          setMessage("error", "Input formatting failed because the schema is not valid JSON.");
+        }
+      }
+
+      function formatDictionary() {
+        try {
+          elements.dictionaryInput.value = prettyStringify(parseDictionaryInput());
+        } catch (error) {
+          setMessage("error", "Dictionary formatting failed: " + error.message);
         }
       }
 
       function loadSample() {
         elements.inputSchema.value = prettyStringify(sampleSchema);
+        elements.dictionaryInput.value = prettyStringify(sampleDictionary);
         elements.outputSchema.textContent = "Normalized schema output will appear here.";
         resetRunState();
-        setMessage("warning", "Sample schema loaded. Run the transformer to generate titles.");
+        setMessage("warning", "Sample schema and abbreviation dictionary loaded. Run the transformer to generate titles.");
+      }
+
+      function loadSampleDictionary() {
+        elements.dictionaryInput.value = prettyStringify(sampleDictionary);
+        setMessage("warning", "Sample abbreviation dictionary loaded.");
       }
 
       function initialize() {
@@ -865,6 +953,7 @@
         elements.libraryStatus.textContent = "Loaded v" + window.KeyNormalizer.version;
         [
           elements.copyInputButton,
+          elements.copyDictionaryButton,
           elements.copyOutputButton
         ].forEach(function (button) {
           button.setAttribute("data-label", button.textContent);
@@ -874,11 +963,16 @@
         loadSample();
 
         elements.loadSampleButton.addEventListener("click", loadSample);
+        elements.loadSampleDictionaryButton.addEventListener("click", loadSampleDictionary);
         elements.normalizeButton.addEventListener("click", normalizeInput);
         elements.formatInputButton.addEventListener("click", formatInput);
+        elements.formatDictionaryButton.addEventListener("click", formatDictionary);
         elements.overwriteTitlesCheckbox.addEventListener("change", updateModeSummary);
         elements.copyInputButton.addEventListener("click", function () {
           tryCopy(elements.inputSchema.value, elements.copyInputButton);
+        });
+        elements.copyDictionaryButton.addEventListener("click", function () {
+          tryCopy(elements.dictionaryInput.value, elements.copyDictionaryButton);
         });
         elements.copyOutputButton.addEventListener("click", function () {
           tryCopy(elements.outputSchema.textContent, elements.copyOutputButton);

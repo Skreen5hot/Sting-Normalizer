@@ -593,6 +593,146 @@
     return cloneContext();
   }
 
+  function applyCompiledStringRules(workingString, compiledStringRules) {
+    var index;
+    var entry;
+
+    for (index = 0; index < compiledStringRules.length; index += 1) {
+      entry = compiledStringRules[index];
+      workingString = workingString.replace(entry.expression, entry.replacement);
+    }
+
+    return workingString;
+  }
+
+  function compile(pipelineDefinition, inputs) {
+    var templateTask = {
+      "@type": "NormalizationTask",
+      "rawIdentifier": "",
+      "pipeline": pipelineDefinition
+    };
+    var validation;
+    var compiledStringRules;
+    var enrichmentRules;
+    var normalizedInputs;
+    var pipelineId;
+    var index;
+    var rule;
+
+    if (inputs !== undefined) {
+      templateTask.inputs = inputs;
+    }
+
+    validation = validateTask(templateTask);
+
+    if (!validation.valid) {
+      return {
+        valid: false,
+        errors: validation.errors.slice(0),
+        run: function (rawIdentifier) {
+          var fallbackTask = {
+            "@type": "NormalizationTask",
+            "rawIdentifier": isString(rawIdentifier) ? rawIdentifier : "",
+            "pipeline": pipelineDefinition
+          };
+          return buildFailedResult(fallbackTask, validation.errors);
+        }
+      };
+    }
+
+    compiledStringRules = [];
+    enrichmentRules = [];
+
+    for (index = 0; index < validation.sortedRules.length; index += 1) {
+      rule = validation.sortedRules[index];
+      if (rule.phase === PHASE_ENRICHMENT) {
+        enrichmentRules.push(rule);
+      } else {
+        compiledStringRules.push({
+          expression: new RegExp(rule.pattern, rule.flags),
+          replacement: rule.replacement
+        });
+      }
+    }
+
+    normalizedInputs = inputs !== undefined ? cloneNormalized(inputs) : undefined;
+    pipelineId = pipelineDefinition && pipelineDefinition["@id"];
+
+    return {
+      valid: true,
+      errors: [],
+      run: function (rawIdentifier) {
+        var source;
+        var workingString;
+        var warnings = [];
+        var tokens;
+        var enrichmentResult;
+        var fallbackTask;
+
+        if (!isString(rawIdentifier)) {
+          fallbackTask = {
+            "@type": "NormalizationTask",
+            "rawIdentifier": "",
+            "pipeline": pipelineDefinition
+          };
+          return buildFailedResult(fallbackTask, [
+            createValidationError(
+              "INVALID_RAW_IDENTIFIER",
+              "Normalization task must include a string rawIdentifier."
+            )
+          ]);
+        }
+
+        source = rawIdentifier.normalize("NFC");
+        fallbackTask = {
+          "@type": "NormalizationTask",
+          "rawIdentifier": source,
+          "pipeline": pipelineDefinition
+        };
+
+        try {
+          workingString = applyCompiledStringRules(source, compiledStringRules);
+          tokens = tokenizeCanonical(workingString);
+          enrichmentResult = applyEnrichmentRules(tokens, enrichmentRules, normalizedInputs, warnings);
+
+          if (!enrichmentResult.ok) {
+            return buildFailedResult(
+              fallbackTask,
+              [enrichmentResult.error],
+              {
+                warningCode: "MISSING_REQUIRED_INPUT",
+                normalizedString: tokens.join(" "),
+                warningExtras: enrichmentResult.error.details
+              }
+            );
+          }
+
+          tokens = enrichmentResult.tokens;
+
+          return buildResult(
+            source,
+            tokens.join(" "),
+            tokens,
+            buildMetadata("succeeded", pipelineId, warnings)
+          );
+        } catch (error) {
+          return buildFailedResult(
+            fallbackTask,
+            [
+              createValidationError(
+                "EXECUTION_ERROR",
+                "Normalization failed during execution: " + error.message + "."
+              )
+            ],
+            {
+              warningCode: "EXECUTION_ERROR"
+            }
+          );
+        }
+      }
+    };
+  }
+
   return {
     version: VERSION,
     context: getContext(),
@@ -600,6 +740,7 @@
     validateTask: validateTask,
     tokenizeCanonical: tokenizeCanonical,
     normalize: normalize,
-    extractTokens: extractTokens
+    extractTokens: extractTokens,
+    compile: compile
   };
 }));

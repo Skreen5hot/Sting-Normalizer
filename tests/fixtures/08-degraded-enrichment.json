@@ -1,0 +1,27 @@
+{
+  "name": "Missing optional input emits skipWithWarning and still succeeds",
+  "task": {
+    "@type": "NormalizationTask",
+    "rawIdentifier": "fname",
+    "pipeline": {
+      "@type": "PipelineDefinition",
+      "rules": [
+        {
+          "@id": "rule:expand",
+          "@type": "Rule",
+          "phase": "Enrichment",
+          "order": 100,
+          "ruleKind": "DictionaryExpand",
+          "inputKey": "abbreviationDictionary",
+          "missingInputBehavior": "skipWithWarning"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "status": "succeeded",
+    "tokens": ["fname"],
+    "normalizedString": "fname",
+    "warningCodes": ["MISSING_OPTIONAL_INPUT"]
+  }
+}

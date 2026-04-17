@@ -1,0 +1,26 @@
+{
+  "name": "missingInputBehavior=fail on absent input produces a failed result",
+  "task": {
+    "@type": "NormalizationTask",
+    "rawIdentifier": "fname",
+    "pipeline": {
+      "@type": "PipelineDefinition",
+      "rules": [
+        {
+          "@id": "rule:required-expand",
+          "@type": "Rule",
+          "phase": "Enrichment",
+          "order": 100,
+          "ruleKind": "DictionaryExpand",
+          "inputKey": "abbreviationDictionary",
+          "missingInputBehavior": "fail"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "status": "failed",
+    "tokens": [],
+    "warningCodes": ["MISSING_REQUIRED_INPUT"]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "Duplicate rule order fails deterministically with INVALID_PIPELINE",
+  "task": {
+    "@type": "NormalizationTask",
+    "rawIdentifier": "anything_here",
+    "pipeline": {
+      "@type": "PipelineDefinition",
+      "rules": [
+        {
+          "@type": "Rule",
+          "phase": "Preparation",
+          "order": 10,
+          "ruleKind": "RegexReplace",
+          "pattern": "a",
+          "flags": "g",
+          "replacement": "b"
+        },
+        {
+          "@type": "Rule",
+          "phase": "Transformation",
+          "order": 10,
+          "ruleKind": "RegexReplace",
+          "pattern": "c",
+          "flags": "g",
+          "replacement": "d"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "status": "failed",
+    "tokens": [],
+    "warningCodes": ["INVALID_PIPELINE"]
+  }
+}

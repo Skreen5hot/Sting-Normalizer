@@ -1,0 +1,40 @@
+{
+  "name": "Pruning phase removes technical type suffixes after delimiter conversion",
+  "task": {
+    "@type": "NormalizationTask",
+    "rawIdentifier": "n34_first_name_string",
+    "pipeline": {
+      "@type": "PipelineDefinition",
+      "@id": "urn:test:pipeline:prune",
+      "rules": [
+        {
+          "@id": "rule:prep",
+          "@type": "Rule",
+          "phase": "Preparation",
+          "order": 10,
+          "ruleKind": "RegexReplace",
+          "pattern": "_",
+          "flags": "g",
+          "replacement": " "
+        },
+        {
+          "@id": "rule:prune",
+          "@type": "Rule",
+          "phase": "Pruning",
+          "order": 20,
+          "ruleKind": "RegexReplace",
+          "pattern": "\\b(string|int|bool|arr|obj)\\b",
+          "flags": "giu",
+          "replacement": ""
+        }
+      ]
+    }
+  },
+  "expected": {
+    "status": "succeeded",
+    "tokens": ["n34", "first", "name"],
+    "normalizedString": "n34 first name",
+    "warningCodes": [],
+    "appliedPipeline": "urn:test:pipeline:prune"
+  }
+}

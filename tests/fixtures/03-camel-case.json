@@ -1,0 +1,27 @@
+{
+  "name": "camelCase splits on lower-to-upper boundary",
+  "task": {
+    "@type": "NormalizationTask",
+    "rawIdentifier": "firstName",
+    "pipeline": {
+      "@type": "PipelineDefinition",
+      "rules": [
+        {
+          "@type": "Rule",
+          "phase": "Transformation",
+          "order": 10,
+          "ruleKind": "RegexReplace",
+          "pattern": "([a-z0-9])([A-Z])",
+          "flags": "g",
+          "replacement": "$1 $2"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "status": "succeeded",
+    "tokens": ["first", "name"],
+    "normalizedString": "first name",
+    "warningCodes": []
+  }
+}

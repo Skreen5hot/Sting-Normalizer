@@ -1,0 +1,33 @@
+{
+  "name": "DictionaryExpand replaces abbreviation tokens with multi-token expansions",
+  "task": {
+    "@type": "NormalizationTask",
+    "rawIdentifier": "fname_lname",
+    "pipeline": {
+      "@type": "PipelineDefinition",
+      "rules": [
+        {
+          "@id": "rule:expand",
+          "@type": "Rule",
+          "phase": "Enrichment",
+          "order": 100,
+          "ruleKind": "DictionaryExpand",
+          "inputKey": "abbreviationDictionary",
+          "missingInputBehavior": "skipWithWarning"
+        }
+      ]
+    },
+    "inputs": {
+      "abbreviationDictionary": {
+        "fname": "first name",
+        "lname": "last name"
+      }
+    }
+  },
+  "expected": {
+    "status": "succeeded",
+    "tokens": ["first", "name", "last", "name"],
+    "normalizedString": "first name last name",
+    "warningCodes": []
+  }
+}

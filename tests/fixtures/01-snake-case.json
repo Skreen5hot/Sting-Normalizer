@@ -1,0 +1,17 @@
+{
+  "name": "snake_case tokenizes on underscore without explicit rules",
+  "task": {
+    "@type": "NormalizationTask",
+    "rawIdentifier": "customer_primary_email",
+    "pipeline": {
+      "@type": "PipelineDefinition",
+      "rules": []
+    }
+  },
+  "expected": {
+    "status": "succeeded",
+    "tokens": ["customer", "primary", "email"],
+    "normalizedString": "customer primary email",
+    "warningCodes": []
+  }
+}

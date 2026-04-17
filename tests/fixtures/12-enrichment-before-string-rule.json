@@ -1,0 +1,34 @@
+{
+  "name": "Enrichment rule ordered before a string rule is rejected",
+  "task": {
+    "@type": "NormalizationTask",
+    "rawIdentifier": "fname_last",
+    "pipeline": {
+      "@type": "PipelineDefinition",
+      "rules": [
+        {
+          "@type": "Rule",
+          "phase": "Enrichment",
+          "order": 10,
+          "ruleKind": "DictionaryExpand",
+          "inputKey": "abbreviationDictionary",
+          "missingInputBehavior": "skipWithWarning"
+        },
+        {
+          "@type": "Rule",
+          "phase": "Transformation",
+          "order": 20,
+          "ruleKind": "RegexReplace",
+          "pattern": "a",
+          "flags": "g",
+          "replacement": "b"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "status": "failed",
+    "tokens": [],
+    "warningCodes": ["INVALID_PIPELINE"]
+  }
+}

@@ -5,7 +5,8 @@ Key Normalizer is a dependency-free JavaScript library for deterministic key nor
 It ships as:
 
 - `keyNormalizer.js`: a single self-contained library file
-- `index.html`: a single self-contained local test harness
+- `index.html`: a single self-contained Schema Title Normalizer (applies the library to JSON Schema)
+- `demo.html`: a single self-contained Key Normalizer Lab for exploring raw `NormalizationTask` payloads
 
 ## Guarantees
 
@@ -18,7 +19,9 @@ It ships as:
 ## Files
 
 - `keyNormalizer.js`: library artifact
-- `index.html`: local browser playground with inline fixtures
+- `index.html`: Schema Title Normalizer — paste a JSON Schema and get titles derived from its keys
+- `demo.html`: Key Normalizer Lab — paste a raw `NormalizationTask` JSON payload and inspect the result
+- `tests/`: Node fixture suite (`node tests/run-tests.js`) plus `compile()` API tests (`node tests/test-compile.js`)
 - `Deterministic-Key-Normalization-Pipeline-v2.1.md`: source specification
 
 ## Public API
@@ -39,6 +42,7 @@ Available methods:
 - `KeyNormalizer.validateTask(task)`
 - `KeyNormalizer.extractTokens(task)`
 - `KeyNormalizer.tokenizeCanonical(value)`
+- `KeyNormalizer.compile(pipelineDefinition, inputs?)` — returns a reusable `{ valid, errors, run(rawIdentifier) }` runner that validates and compiles the pipeline once
 - `KeyNormalizer.getContext()`
 - `KeyNormalizer.version`
 
@@ -158,12 +162,22 @@ The included harness examples cover:
 
 ### Browser
 
-Open `index.html` directly from disk. It loads `keyNormalizer.js` from the same folder and runs fully offline.
+- Open `index.html` for the Schema Title Normalizer (schema in, schema with `title` fields out).
+- Open `demo.html` for the Key Normalizer Lab (raw `NormalizationTask` in, full result with metadata and warnings out).
+
+Both pages load `keyNormalizer.js` from the same folder and run fully offline.
 
 ### Node.js
 
 ```bash
 node -e "const k=require('./keyNormalizer.js'); console.log(k.version)"
+```
+
+### Tests
+
+```bash
+node tests/run-tests.js      # 12 fixture-based conformance tests + determinism check
+node tests/test-compile.js   # compile() API tests
 ```
 
 ## Current Scope

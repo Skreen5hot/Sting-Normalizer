@@ -1,0 +1,17 @@
+{
+  "name": "Decomposed Unicode input is NFC-normalized before tokenization",
+  "task": {
+    "@type": "NormalizationTask",
+    "rawIdentifier": "cafe\u0301_menu",
+    "pipeline": {
+      "@type": "PipelineDefinition",
+      "rules": []
+    }
+  },
+  "expected": {
+    "status": "succeeded",
+    "tokens": ["caf\u00e9", "menu"],
+    "normalizedString": "caf\u00e9 menu",
+    "warningCodes": []
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "acronym-heavy camelCase (getURLData) produces distinct tokens",
+  "task": {
+    "@type": "NormalizationTask",
+    "rawIdentifier": "getURLData",
+    "pipeline": {
+      "@type": "PipelineDefinition",
+      "rules": [
+        {
+          "@type": "Rule",
+          "phase": "Preparation",
+          "order": 10,
+          "ruleKind": "RegexReplace",
+          "pattern": "([A-Z]+)([A-Z][a-z])",
+          "flags": "g",
+          "replacement": "$1 $2"
+        },
+        {
+          "@type": "Rule",
+          "phase": "Transformation",
+          "order": 20,
+          "ruleKind": "RegexReplace",
+          "pattern": "([a-z0-9])([A-Z])",
+          "flags": "g",
+          "replacement": "$1 $2"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "status": "succeeded",
+    "tokens": ["get", "url", "data"],
+    "normalizedString": "get url data",
+    "warningCodes": []
+  }
+}
