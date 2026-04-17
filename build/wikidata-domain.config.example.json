@@ -1,0 +1,10 @@
+{
+  "artifactId": "urn:uuid:wikidata-finance-extract-v1",
+  "domainRoot": "wd:Q600473",
+  "domainQid": "wd:Q600473",
+  "sourceSnapshot": "wikidata-2026-04-01",
+  "queryTemplateVersion": "wikidata-abbrev-v1",
+  "languagePolicy": "shortName=en-or-none;label=en",
+  "normalizationVersion": "build-normalization-v1",
+  "endpoint": "https://query.wikidata.org/sparql"
+}

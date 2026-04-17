@@ -1,0 +1,60 @@
+{
+  "@context": {
+    "ex": "http://example.org/vocab#",
+    "wd": "http://www.wikidata.org/entity/",
+    "DictionaryExtractionArtifact": "ex:DictionaryExtractionArtifact",
+    "AbbreviationCandidate": "ex:AbbreviationCandidate",
+    "domainRoot": "ex:domainRoot",
+    "sourceSnapshot": "ex:sourceSnapshot",
+    "queryTemplateVersion": "ex:queryTemplateVersion",
+    "languagePolicy": "ex:languagePolicy",
+    "normalizationVersion": "ex:normalizationVersion",
+    "entries": "ex:entries",
+    "shortNameRaw": "ex:shortNameRaw",
+    "fullLabelRaw": "ex:fullLabelRaw",
+    "shortNameKey": "ex:shortNameKey",
+    "fullLabelValue": "ex:fullLabelValue",
+    "sourceEntity": "ex:sourceEntity"
+  },
+  "@type": "DictionaryExtractionArtifact",
+  "@id": "urn:uuid:wikidata-finance-extract-v1",
+  "domainRoot": "wd:Q600473",
+  "sourceSnapshot": "wikidata-2026-04-01",
+  "queryTemplateVersion": "wikidata-abbrev-v1",
+  "languagePolicy": "shortName=en-or-none;label=en",
+  "normalizationVersion": "build-normalization-v1",
+  "entries": [
+    {
+      "@type": "AbbreviationCandidate",
+      "shortNameRaw": "ATM",
+      "fullLabelRaw": "Automated Teller Machine",
+      "shortNameKey": "atm",
+      "fullLabelValue": "automated teller machine",
+      "sourceEntity": "http://www.wikidata.org/entity/Q81235"
+    },
+    {
+      "@type": "AbbreviationCandidate",
+      "shortNameRaw": "ROI",
+      "fullLabelRaw": "Return on Investment",
+      "shortNameKey": "roi",
+      "fullLabelValue": "return on investment",
+      "sourceEntity": "http://www.wikidata.org/entity/Q49250"
+    },
+    {
+      "@type": "AbbreviationCandidate",
+      "shortNameRaw": "MAC",
+      "fullLabelRaw": "Media Access Control",
+      "shortNameKey": "mac",
+      "fullLabelValue": "media access control",
+      "sourceEntity": "http://www.wikidata.org/entity/Q507734"
+    },
+    {
+      "@type": "AbbreviationCandidate",
+      "shortNameRaw": "Mac",
+      "fullLabelRaw": "Macintosh",
+      "shortNameKey": "mac",
+      "fullLabelValue": "macintosh",
+      "sourceEntity": "http://www.wikidata.org/entity/Q622302"
+    }
+  ]
+}

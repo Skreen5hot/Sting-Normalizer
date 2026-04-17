@@ -1,0 +1,28 @@
+{
+  "dictionaryId": "urn:uuid:wikidata-finance-runtime-v1",
+  "sourceArtifact": "urn:uuid:wikidata-finance-extract-v1",
+  "domainRoot": "wd:Q600473",
+  "sourceSnapshot": "wikidata-2026-04-01",
+  "collisionPolicy": "strictDiscard",
+  "compilerVersion": "runtime-compiler-v1",
+  "inputKey": "abbreviationDictionary",
+  "entriesMap": {
+    "atm": "automated teller machine",
+    "roi": "return on investment"
+  },
+  "droppedAmbiguousKeys": [
+    {
+      "shortNameKey": "mac",
+      "candidates": [
+        {
+          "fullLabelValue": "macintosh",
+          "sourceEntity": "http://www.wikidata.org/entity/Q622302"
+        },
+        {
+          "fullLabelValue": "media access control",
+          "sourceEntity": "http://www.wikidata.org/entity/Q507734"
+        }
+      ]
+    }
+  ]
+}
