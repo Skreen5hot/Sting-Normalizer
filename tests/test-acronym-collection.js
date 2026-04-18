@@ -96,19 +96,13 @@ function escapeSparqlLiteral(value) {
 
 function buildSparqlShortNameQuery(needles) {
   var values = needles.map(function (n) {
-    return "\"" + escapeSparqlLiteral(n) + "\"";
+    return "\"" + escapeSparqlLiteral(n) + "\"@en";
   }).join(" ");
   return [
     "SELECT ?concept ?conceptLabel ?conceptDescription ?shortName WHERE {",
-    "  VALUES ?needle { " + values + " }",
+    "  VALUES ?shortName { " + values + " }",
     "  ?concept wdt:P1813 ?shortName .",
-    "  FILTER(STR(?shortName) = ?needle)",
-    "  ?concept rdfs:label ?conceptLabel .",
-    "  FILTER(LANG(?conceptLabel) = \"en\")",
-    "  OPTIONAL {",
-    "    ?concept schema:description ?conceptDescription .",
-    "    FILTER(LANG(?conceptDescription) = \"en\")",
-    "  }",
+    "  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\" . }",
     "}",
     "LIMIT 500"
   ].join("\n");
@@ -192,12 +186,14 @@ assertEq("acronym union across the schema",
 // --- SPARQL query builder ---
 
 var query = buildSparqlShortNameQuery(["DHS", "FAQ"]);
-assertEq("SPARQL query embeds needles as lexical VALUES",
-  query.indexOf("VALUES ?needle { \"DHS\" \"FAQ\" }") !== -1, true);
-assertEq("SPARQL query references P1813",
-  query.indexOf("wdt:P1813 ?shortName") !== -1, true);
-assertEq("SPARQL query has English label filter",
-  query.indexOf("FILTER(LANG(?conceptLabel) = \"en\")") !== -1, true);
+assertEq("SPARQL query embeds needles as @en-tagged VALUES bound to ?shortName",
+  query.indexOf("VALUES ?shortName { \"DHS\"@en \"FAQ\"@en }") !== -1, true);
+assertEq("SPARQL query references P1813 directly without STR() filter",
+  query.indexOf("?concept wdt:P1813 ?shortName .") !== -1, true);
+assertEq("SPARQL query does not use the slow FILTER(STR(...)) pattern",
+  query.indexOf("FILTER(STR(") === -1, true);
+assertEq("SPARQL query delegates labels to wikibase:label service",
+  query.indexOf("SERVICE wikibase:label") !== -1, true);
 assertEq("SPARQL query escapes embedded quotes in needles",
   buildSparqlShortNameQuery(["A\"B"]).indexOf("\"A\\\"B\"") > -1, true);
 assertEq("SPARQL query escapes backslashes in needles",

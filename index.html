@@ -1019,19 +1019,13 @@
 
       function buildSparqlShortNameQuery(needles) {
         var values = needles.map(function (n) {
-          return "\"" + escapeSparqlLiteral(n) + "\"";
+          return "\"" + escapeSparqlLiteral(n) + "\"@en";
         }).join(" ");
         return [
           "SELECT ?concept ?conceptLabel ?conceptDescription ?shortName WHERE {",
-          "  VALUES ?needle { " + values + " }",
+          "  VALUES ?shortName { " + values + " }",
           "  ?concept wdt:P1813 ?shortName .",
-          "  FILTER(STR(?shortName) = ?needle)",
-          "  ?concept rdfs:label ?conceptLabel .",
-          "  FILTER(LANG(?conceptLabel) = \"en\")",
-          "  OPTIONAL {",
-          "    ?concept schema:description ?conceptDescription .",
-          "    FILTER(LANG(?conceptDescription) = \"en\")",
-          "  }",
+          "  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\" . }",
           "}",
           "LIMIT 500"
         ].join("\n");
