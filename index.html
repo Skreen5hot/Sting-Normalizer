@@ -576,6 +576,9 @@
       var suggestionCache = new Map();
       var currentSuggestions = null;
       var WIKIDATA_ENDPOINT = "https://query.wikidata.org/sparql";
+      var QUERY_TIMEOUT_MS = 15000;
+      var MIN_QUERY_INTERVAL_MS = 8000;
+      var lastSparqlAttemptAt = 0;
 
       var sampleSchema = {
         "$id": "customer_profile.schema.json",
@@ -1043,17 +1046,46 @@
         if (uncached.length === 0) {
           fetchPromise = Promise.resolve();
         } else {
+          var now = Date.now();
+          var elapsedSinceLast = now - lastSparqlAttemptAt;
+          if (lastSparqlAttemptAt > 0 && elapsedSinceLast < MIN_QUERY_INTERVAL_MS) {
+            var waitSeconds = Math.ceil((MIN_QUERY_INTERVAL_MS - elapsedSinceLast) / 1000);
+            return Promise.reject(new Error(
+              "Throttled locally to avoid tripping Wikidata's rate limit. Wait " +
+              waitSeconds + "s and click Normalize Titles again."
+            ));
+          }
+          lastSparqlAttemptAt = now;
+
           var needles = uncached.map(function (a) { return a.toUpperCase(); });
           var query = buildSparqlShortNameQuery(needles);
           var url = WIKIDATA_ENDPOINT + "?format=json&query=" + encodeURIComponent(query);
 
+          var controller = new AbortController();
+          var timeoutId = window.setTimeout(function () {
+            controller.abort();
+          }, QUERY_TIMEOUT_MS);
+
           fetchPromise = fetch(url, {
-            headers: { "Accept": "application/sparql-results+json" }
+            headers: { "Accept": "application/sparql-results+json" },
+            signal: controller.signal
           }).then(function (response) {
+            window.clearTimeout(timeoutId);
             if (!response.ok) {
-              throw new Error("HTTP " + response.status + " from Wikidata");
+              if (response.status === 429) {
+                throw new Error("Wikidata rate-limited us (HTTP 429). Wait ~60s and retry.");
+              }
+              throw new Error("Wikidata returned HTTP " + response.status + ".");
             }
             return response.json();
+          }, function (error) {
+            window.clearTimeout(timeoutId);
+            if (error && error.name === "AbortError") {
+              throw new Error("Wikidata query timed out after " + (QUERY_TIMEOUT_MS / 1000) + "s (probably rate-limited or slow).");
+            }
+            throw new Error(
+              "Wikidata unreachable. Most common cause is an HTTP 429 whose CORS headers were stripped, so fetch() sees only 'Failed to fetch'. Wait ~60s and retry, or check DevTools \u2192 Network."
+            );
           }).then(function (data) {
             uncached.forEach(function (a) {
               if (!suggestionCache.has(a)) {
@@ -1211,9 +1243,10 @@
         queryWikidataShortNames(acronyms).then(function (resultsMap) {
           renderSuggestions(acronyms, resultsMap);
         }).catch(function (error) {
-          elements.suggestionsMessage.className = "message error";
-          elements.suggestionsMessage.textContent = "Wikidata query failed: " + error.message +
-            ". The harness falls back to preserved-casing for these acronyms.";
+          var isThrottled = /Throttled locally/.test(error.message);
+          elements.suggestionsMessage.className = isThrottled ? "message warning" : "message error";
+          elements.suggestionsMessage.textContent = error.message +
+            " Titles above already use preserved-casing for these acronyms.";
           elements.applySuggestionsButton.disabled = true;
           currentSuggestions = null;
         });
